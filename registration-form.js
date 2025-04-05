@@ -3,6 +3,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const sameAddressCheckbox = document.getElementById('sameAddress');
     const registeredAddressSection = document.getElementById('registeredAddressSection');
 
+    // Generate and set CSRF token
+    function generateCSRFToken() {
+        // Generate a random string for the token
+        const randomToken = Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
+            .map(byte => byte.toString(16).padStart(2, '0'))
+            .join('');
+        
+        // Set the token in the form
+        document.getElementById('csrfToken').value = randomToken;
+        
+        // Store the token in session storage for later validation
+        sessionStorage.setItem('csrfToken', randomToken);
+        
+        return randomToken;
+    }
+    
+    // Generate a CSRF token when the page loads
+    generateCSRFToken();
+    
+    // Function to validate CSRF token
+    function validateCSRFToken() {
+        const tokenFromForm = document.getElementById('csrfToken').value;
+        const tokenFromStorage = sessionStorage.getItem('csrfToken');
+        
+        if (!tokenFromForm || !tokenFromStorage || tokenFromForm !== tokenFromStorage) {
+            console.error('CSRF validation failed');
+            return false;
+        }
+        
+        return true;
+    }
+
     // Function to generate a random 11-digit PESEL number
     function generateRandomPesel() {
         let pesel = '';
@@ -257,13 +289,30 @@ document.addEventListener('DOMContentLoaded', function () {
         // Prevent default submission
         event.preventDefault();
 
+        // Validate CSRF token
+        if (!validateCSRFToken()) {
+            alert('Wystąpił błąd bezpieczeństwa. Proszę odświeżyć stronę i spróbować ponownie.');
+            return false;
+        }
+
         // Only use our custom validation
         if (!validateForm()) {
             return false;
         }
+        
+        // Temporarily re-enable any disabled fields to ensure their data is included in the form submission
+        const disabledFields = registrationForm.querySelectorAll('input:disabled, select:disabled');
+        disabledFields.forEach(field => {
+            field.disabled = false;
+        });
 
         // If form is valid, collect the data
         const formData = new FormData(registrationForm);
+        
+        // Re-disable the fields that were previously disabled
+        disabledFields.forEach(field => {
+            field.disabled = true;
+        });
 
         // URL for Google Sheets script
         const sheetScriptURL = "https://script.google.com/macros/s/AKfycbwZJBpP5An4M0MdDYPeGopx7dvk-5-NerMa-9-dRg1kab85Zz9gU9sUIP6Qb99pnx5N/exec";
