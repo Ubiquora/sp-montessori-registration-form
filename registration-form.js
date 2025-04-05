@@ -121,20 +121,43 @@ document.addEventListener('DOMContentLoaded', function () {
      * @returns {string} - Formatted postal code
      */
     function formatPostalCode(value) {
-        // Remove non-digits
-        let formattedValue = value.replace(/[^0-9]/g, '');
+        // Allow up to 2 digits followed by an optional hyphen and up to 3 more digits
+        let result = '';
+        let digits = '';
+        let hasHyphen = false;
         
-        // Add hyphen after first two digits
-        if (formattedValue.length > 2) {
-            formattedValue = formattedValue.slice(0, 2) + '-' + formattedValue.slice(2);
+        // Process each character in the input
+        for (let i = 0; i < value.length; i++) {
+            const char = value[i];
+            
+            if (/\d/.test(char)) {
+                // It's a digit
+                if (digits.length < 2) {
+                    // First two digits
+                    digits += char;
+                    result += char;
+                } else if (digits.length >= 2 && digits.length < 5) {
+                    // Next three digits (after the hyphen position)
+                    digits += char;
+                    
+                    // Add hyphen if we haven't added one yet and we're at position where it should go
+                    if (!hasHyphen) {
+                        result += '-';
+                        hasHyphen = true;
+                    }
+                    
+                    result += char;
+                }
+                // Ignore digits beyond the 5th position
+            } else if (char === '-' && digits.length === 2 && !hasHyphen) {
+                // Allow a hyphen after exactly two digits
+                hasHyphen = true;
+                result += char;
+            }
+            // Ignore any other characters
         }
         
-        // Limit length to 6 characters (including hyphen)
-        if (formattedValue.length > 6) {
-            formattedValue = formattedValue.slice(0, 6);
-        }
-        
-        return formattedValue;
+        return result;
     }
 
     /**
@@ -251,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wysyłanie...';
 
-        console.log(new URLSearchParams(formData).toString());
         // Send data to Google Sheets
         fetch(sheetScriptURL, {
             method: 'POST',
@@ -259,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams(formData).toString()
+            body: new URLSearchParams(formData)
         })
             .then(response => {
                 // Google Apps Script returns success via HTTP code, but may have application-level errors
