@@ -188,20 +188,6 @@ legend.form-label {
     color: #dc3545;
 }
 
-/* Custom styles for reCAPTCHA */
-.g-recaptcha {
-    margin: 0 auto 20px;
-    width: fit-content;
-    display: block;
-}
-
-@media (max-width: 400px) {
-    .g-recaptcha {
-        transform: scale(0.85);
-        transform-origin: center;
-    }
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .card-body {

@@ -2,40 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
     const sameAddressCheckbox = document.getElementById('sameAddress');
     const registeredAddressSection = document.getElementById('registeredAddressSection');
-    
-
-
-    // Generate and set CSRF token
-    function generateCSRFToken() {
-        // Generate a random string for the token
-        const randomToken = Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
-            .map(byte => byte.toString(16).padStart(2, '0'))
-            .join('');
-        
-        // Set the token in the form
-        document.getElementById('csrfToken').value = randomToken;
-        
-        // Store the token in session storage for later validation
-        sessionStorage.setItem('csrfToken', randomToken);
-        
-        return randomToken;
-    }
-    
-    // Generate a CSRF token when the page loads
-    generateCSRFToken();
-    
-    // Function to validate CSRF token
-    function validateCSRFToken() {
-        const tokenFromForm = document.getElementById('csrfToken').value;
-        const tokenFromStorage = sessionStorage.getItem('csrfToken');
-        
-        if (!tokenFromForm || !tokenFromStorage || tokenFromForm !== tokenFromStorage) {
-            console.error('CSRF validation failed');
-            return false;
-        }
-        
-        return true;
-    }
 
     // Function to generate a random 11-digit PESEL number
     function generateRandomPesel() {
@@ -53,31 +19,31 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('lastName').value = 'Kowalski';
         document.getElementById('pesel').value = generateRandomPesel();
         document.getElementById('grade').value = '3';
-        
+
         // Set a date of birth (6 years ago from current date)
         const birthDate = new Date();
         birthDate.setFullYear(birthDate.getFullYear() - 9);
         document.getElementById('birthDate').value = birthDate.toISOString().split('T')[0];
-        
+
         document.getElementById('birthPlace').value = 'Warszawa';
-        
+
         // Residence address
         document.getElementById('resStreetWithNumber').value = 'Marszałkowska 123/45';
         document.getElementById('resPostalCode').value = '00-950';
         document.getElementById('resCity').value = 'Warszawa';
-        
+
         // Registered address
         document.getElementById('regStreetWithNumber').value = 'Marszałkowska 123/45';
         document.getElementById('regPostalCode').value = '00-950';
         document.getElementById('regCity').value = 'Warszawa';
-        
+
         // Schools
         document.getElementById('currentSchoolName').value = 'Szkoła Podstawowa nr 123 im. Jana Kowalskiego';
         document.getElementById('currentSchoolAddress').value = 'ul. Szkolna 10, 00-950 Warszawa';
         document.getElementById('districtSchoolName').value = 'Szkoła Podstawowa nr 456 im. Marii Nowak';
         document.getElementById('districtSchoolAddress').value = 'ul. Rejonowa 20, 00-950 Warszawa';
         document.getElementById('districtSchoolEmail').value = 'sekretariat@sp456.edu.pl';
-        
+
         // Mother data
         document.getElementById('motherFirstName').value = 'Anna';
         document.getElementById('motherLastName').value = 'Kowalska';
@@ -88,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('motherStreetWithNumber').value = 'Marszałkowska 1';
         document.getElementById('motherPostalCode').value = '00-950';
         document.getElementById('motherCity').value = 'Warszawa';
-        
+
         // Father data
         document.getElementById('fatherFirstName').value = 'Tomasz';
         document.getElementById('fatherLastName').value = 'Kowalski';
@@ -99,11 +65,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('fatherStreetWithNumber').value = 'Marszałkowska 12';
         document.getElementById('fatherPostalCode').value = '00-950';
         document.getElementById('fatherCity').value = 'Warszawa';
-        
+
         // Check the agreement checkbox
         document.getElementById('agreement').checked = true;
     }
-    
+
     // Call the function to prepopulate form with dummy data
     prepopulateFormWithDummyData();
 
@@ -158,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function formatPostalCode(value) {
         // Remove all non-digit characters except hyphen
         let cleaned = value.replace(/[^\d-]/g, '');
-        
+
         // Handle case where user entered hyphen manually
         if (cleaned.length > 2 && cleaned.charAt(2) === '-') {
             // Keep the manually entered hyphen and continue formatting
@@ -168,10 +134,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             // No manual hyphen - format automatically
             const digits = cleaned.replace(/\D/g, '');
-            
+
             // Limit to 5 digits total
             const limitedDigits = digits.substring(0, 5);
-            
+
             // Format as XX-XXX if we have 2 or more digits
             if (limitedDigits.length > 2) {
                 return limitedDigits.substring(0, 2) + '-' + limitedDigits.substring(2);
@@ -190,18 +156,18 @@ document.addEventListener('DOMContentLoaded', function () {
     function setupAddressCopyFeature(checkboxId, targetSectionId, fieldMap) {
         const checkbox = document.getElementById(checkboxId);
         const targetSection = document.getElementById(targetSectionId);
-        
+
         if (!checkbox || !targetSection) return;
-        
+
         // Handle checkbox change event
-        checkbox.addEventListener('change', function() {
+        checkbox.addEventListener('change', function () {
             const isChecked = this.checked;
-            
+
             // For each field in the mapping
             Object.entries(fieldMap).forEach(([sourceId, targetId]) => {
                 const sourceElement = document.getElementById(sourceId);
                 const targetElement = document.getElementById(targetId);
-                
+
                 if (sourceElement && targetElement) {
                     // Copy and format value if checkbox is checked
                     if (isChecked) {
@@ -211,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         } else {
                             targetElement.value = sourceElement.value;
                         }
-                        
+
                         // Disable target fields
                         targetElement.disabled = true;
                     } else {
@@ -220,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
-            
+
             // Toggle visual class
             if (isChecked) {
                 targetSection.classList.add('auto-filled');
@@ -228,15 +194,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 targetSection.classList.remove('auto-filled');
             }
         });
-        
+
         // Set up source field input listeners to update target fields when changed
         const sourceFields = Object.keys(fieldMap);
         sourceFields.forEach(sourceId => {
-            document.getElementById(sourceId)?.addEventListener('input', function() {
+            document.getElementById(sourceId)?.addEventListener('input', function () {
                 if (checkbox.checked) {
                     const targetId = fieldMap[sourceId];
                     const targetElement = document.getElementById(targetId);
-                    
+
                     if (targetElement) {
                         // Special handling for postal code
                         if (targetId.includes('PostalCode')) {
@@ -249,23 +215,23 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-    
+
     // Set up address copying features
-    
+
     // 1. Registered address copy from residence address
     setupAddressCopyFeature('sameAddress', 'registeredAddressSection', {
         'resStreetWithNumber': 'regStreetWithNumber',
         'resPostalCode': 'regPostalCode',
         'resCity': 'regCity'
     });
-    
+
     // 2. Mother's address copy from residence address
     setupAddressCopyFeature('motherSameAddress', 'motherAddressSection', {
         'resStreetWithNumber': 'motherStreetWithNumber',
         'resPostalCode': 'motherPostalCode',
         'resCity': 'motherCity'
     });
-    
+
     // 3. Father's address copy from residence address
     setupAddressCopyFeature('fatherSameAddress', 'fatherAddressSection', {
         'resStreetWithNumber': 'fatherStreetWithNumber',
@@ -277,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetAddressSection(checkboxId, sectionId, fieldIds) {
         document.getElementById(checkboxId).checked = false;
         document.getElementById(sectionId).classList.remove('auto-filled');
-        
+
         fieldIds.forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) {
@@ -291,24 +257,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // Prevent default submission
         event.preventDefault();
 
-        // Validate CSRF token
-        if (!validateCSRFToken()) {
-            alert('Wystąpił błąd bezpieczeństwa. Proszę odświeżyć stronę i spróbować ponownie.');
-            return false;
-        }
-        
-        // Validate reCAPTCHA
-        const recaptchaResponse = grecaptcha.getResponse();
-        if (!recaptchaResponse) {
-            alert('Proszę zaznaczyć, że nie jesteś robotem (CAPTCHA).');
-            return false;
-        }
-
         // Only use our custom validation
         if (!validateForm()) {
             return false;
         }
-        
+
         // Temporarily re-enable any disabled fields to ensure their data is included in the form submission
         const disabledFields = registrationForm.querySelectorAll('input:disabled, select:disabled');
         disabledFields.forEach(field => {
@@ -317,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // If form is valid, collect the data
         const formData = new FormData(registrationForm);
-        
+
         // Re-disable the fields that were previously disabled
         disabledFields.forEach(field => {
             field.disabled = true;
@@ -364,11 +317,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 resetAddressSection('sameAddress', 'registeredAddressSection', [
                     'regStreetWithNumber', 'regPostalCode', 'regCity'
                 ]);
-                
+
                 resetAddressSection('motherSameAddress', 'motherAddressSection', [
                     'motherStreetWithNumber', 'motherPostalCode', 'motherCity'
                 ]);
-                
+
                 resetAddressSection('fatherSameAddress', 'fatherAddressSection', [
                     'fatherStreetWithNumber', 'fatherPostalCode', 'fatherCity'
                 ]);
@@ -418,26 +371,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 field.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-        
+
         // Utility function for field validation with common patterns
         function validateField(id, options = {}) {
             const field = document.getElementById(id);
             if (!field) return;
-            
+
             const value = field.value.trim();
-            
+
             // Required field validation
             if (options.required && !value) {
                 markInvalid(field, options.requiredMessage || 'To pole jest wymagane');
                 return false;
             }
-            
+
             // Pattern validation (if field has value)
             if (value && options.pattern && !options.pattern.test(value)) {
                 markInvalid(field, options.patternMessage || 'Wartość nie spełnia wymagań');
                 return false;
             }
-            
+
             return true;
         }
 
@@ -454,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('lastName', { required: true, requiredMessage: 'Proszę podać nazwisko ucznia' });
         validateField('birthDate', { required: true, requiredMessage: 'Proszę podać datę urodzenia' });
         validateField('birthPlace', { required: true, requiredMessage: 'Proszę podać miejsce urodzenia' });
-        
+
         // Validate address fields
         validateField('resStreetWithNumber', { required: true, requiredMessage: 'Proszę podać ulicę wraz z numerem domu' });
         validateField('resPostalCode', {
@@ -468,9 +421,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validate registered address fields if "same address" is not checked
         const sameAddressCheckbox = document.getElementById('sameAddress');
         if (!sameAddressCheckbox.checked) {
-            validateField('regStreetWithNumber', { 
-                required: true, 
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu w adresie zameldowania' 
+            validateField('regStreetWithNumber', {
+                required: true,
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu w adresie zameldowania'
             });
             validateField('regPostalCode', {
                 required: true,
@@ -482,21 +435,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Validate school information
-        validateField('currentSchoolName', { 
-            required: true, 
-            requiredMessage: 'Proszę podać nazwę obecnej szkoły ucznia' 
+        validateField('currentSchoolName', {
+            required: true,
+            requiredMessage: 'Proszę podać nazwę obecnej szkoły ucznia'
         });
-        validateField('currentSchoolAddress', { 
-            required: true, 
-            requiredMessage: 'Proszę podać adres obecnej szkoły ucznia' 
+        validateField('currentSchoolAddress', {
+            required: true,
+            requiredMessage: 'Proszę podać adres obecnej szkoły ucznia'
         });
-        validateField('districtSchoolName', { 
-            required: true, 
-            requiredMessage: 'Proszę podać nazwę szkoły rejonowej' 
+        validateField('districtSchoolName', {
+            required: true,
+            requiredMessage: 'Proszę podać nazwę szkoły rejonowej'
         });
-        validateField('districtSchoolAddress', { 
-            required: true, 
-            requiredMessage: 'Proszę podać adres szkoły rejonowej' 
+        validateField('districtSchoolAddress', {
+            required: true,
+            requiredMessage: 'Proszę podać adres szkoły rejonowej'
         });
         validateField('districtSchoolEmail', {
             required: true,
@@ -524,9 +477,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validate mother's address if checkbox is not checked
         const motherSameAddressCheckbox = document.getElementById('motherSameAddress');
         if (!motherSameAddressCheckbox.checked) {
-            validateField('motherStreetWithNumber', { 
-                required: true, 
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu mamy' 
+            validateField('motherStreetWithNumber', {
+                required: true,
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu mamy'
             });
             validateField('motherPostalCode', {
                 required: true,
@@ -556,9 +509,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validate father's address if checkbox is not checked
         const fatherSameAddressCheckbox = document.getElementById('fatherSameAddress');
         if (!fatherSameAddressCheckbox.checked) {
-            validateField('fatherStreetWithNumber', { 
-                required: true, 
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu ojca' 
+            validateField('fatherStreetWithNumber', {
+                required: true,
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu ojca'
             });
             validateField('fatherPostalCode', {
                 required: true,
@@ -592,48 +545,48 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Restrict input to digits only for phone number fields
-    ['motherPhone', 'fatherPhone'].forEach(function(fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function(e) {
+    ['motherPhone', 'fatherPhone'].forEach(function (fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function (e) {
             // Remove any non-digit characters
             let inputValue = e.target.value.replace(/[^0-9]/g, '');
-            
+
             // Limit to 9 digits
             if (inputValue.length > 9) {
                 inputValue = inputValue.slice(0, 9);
             }
-            
+
             // Update the input value
             e.target.value = inputValue;
         });
     });
 
     // Format ID series inputs to uppercase letters only
-    ['motherIdSeries', 'fatherIdSeries'].forEach(function(fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function(e) {
+    ['motherIdSeries', 'fatherIdSeries'].forEach(function (fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function (e) {
             // Remove any non-letter characters and convert to uppercase
             let inputValue = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase();
-            
+
             // Limit to 3 characters
             if (inputValue.length > 3) {
                 inputValue = inputValue.slice(0, 3);
             }
-            
+
             // Update the input value
             e.target.value = inputValue;
         });
     });
-    
+
     // Format ID number inputs to digits only
-    ['motherIdNumber', 'fatherIdNumber'].forEach(function(fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function(e) {
+    ['motherIdNumber', 'fatherIdNumber'].forEach(function (fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function (e) {
             // Remove any non-digit characters
             let inputValue = e.target.value.replace(/[^0-9]/g, '');
-            
+
             // Limit to 6 characters
             if (inputValue.length > 6) {
                 inputValue = inputValue.slice(0, 6);
             }
-            
+
             // Update the input value
             e.target.value = inputValue;
         });
