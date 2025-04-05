@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
     const sameAddressCheckbox = document.getElementById('sameAddress');
     const registeredAddressSection = document.getElementById('registeredAddressSection');
+    
+
 
     // Generate and set CSRF token
     function generateCSRFToken() {
@@ -102,8 +104,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('agreement').checked = true;
     }
     
-    // Call the function to prepopulate form when page loads
+    // Call the function to prepopulate form with dummy data
     prepopulateFormWithDummyData();
+
 
     // Restrict input to digits only for PESEL field, max 11 chars
     document.getElementById('pesel').addEventListener('input', function (e) {
@@ -153,43 +156,29 @@ document.addEventListener('DOMContentLoaded', function () {
      * @returns {string} - Formatted postal code
      */
     function formatPostalCode(value) {
-        // Allow up to 2 digits followed by an optional hyphen and up to 3 more digits
-        let result = '';
-        let digits = '';
-        let hasHyphen = false;
+        // Remove all non-digit characters except hyphen
+        let cleaned = value.replace(/[^\d-]/g, '');
         
-        // Process each character in the input
-        for (let i = 0; i < value.length; i++) {
-            const char = value[i];
+        // Handle case where user entered hyphen manually
+        if (cleaned.length > 2 && cleaned.charAt(2) === '-') {
+            // Keep the manually entered hyphen and continue formatting
+            const firstPart = cleaned.substring(0, 3); // Keep XX-
+            const secondPart = cleaned.substring(3).replace(/\D/g, '').substring(0, 3); // Get up to 3 digits after hyphen
+            return firstPart + secondPart;
+        } else {
+            // No manual hyphen - format automatically
+            const digits = cleaned.replace(/\D/g, '');
             
-            if (/\d/.test(char)) {
-                // It's a digit
-                if (digits.length < 2) {
-                    // First two digits
-                    digits += char;
-                    result += char;
-                } else if (digits.length >= 2 && digits.length < 5) {
-                    // Next three digits (after the hyphen position)
-                    digits += char;
-                    
-                    // Add hyphen if we haven't added one yet and we're at position where it should go
-                    if (!hasHyphen) {
-                        result += '-';
-                        hasHyphen = true;
-                    }
-                    
-                    result += char;
-                }
-                // Ignore digits beyond the 5th position
-            } else if (char === '-' && digits.length === 2 && !hasHyphen) {
-                // Allow a hyphen after exactly two digits
-                hasHyphen = true;
-                result += char;
+            // Limit to 5 digits total
+            const limitedDigits = digits.substring(0, 5);
+            
+            // Format as XX-XXX if we have 2 or more digits
+            if (limitedDigits.length > 2) {
+                return limitedDigits.substring(0, 2) + '-' + limitedDigits.substring(2);
+            } else {
+                return limitedDigits;
             }
-            // Ignore any other characters
         }
-        
-        return result;
     }
 
     /**
@@ -284,6 +273,19 @@ document.addEventListener('DOMContentLoaded', function () {
         'resCity': 'fatherCity'
     });
 
+    // Helper function to reset address sections after form submission or when needed
+    function resetAddressSection(checkboxId, sectionId, fieldIds) {
+        document.getElementById(checkboxId).checked = false;
+        document.getElementById(sectionId).classList.remove('auto-filled');
+        
+        fieldIds.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.disabled = false;
+            }
+        });
+    }
+
     // Form validation and submission
     registrationForm.addEventListener('submit', function (event) {
         // Prevent default submission
@@ -292,6 +294,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validate CSRF token
         if (!validateCSRFToken()) {
             alert('Wystąpił błąd bezpieczeństwa. Proszę odświeżyć stronę i spróbować ponownie.');
+            return false;
+        }
+        
+        // Validate reCAPTCHA
+        const recaptchaResponse = grecaptcha.getResponse();
+        if (!recaptchaResponse) {
+            alert('Proszę zaznaczyć, że nie jesteś robotem (CAPTCHA).');
             return false;
         }
 
@@ -351,28 +360,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Reset form after successful submission
                 registrationForm.reset();
 
-                // Uncheck the "same address" checkboxes
-                document.getElementById('sameAddress').checked = false;
-                document.getElementById('motherSameAddress').checked = false;
-                document.getElementById('fatherSameAddress').checked = false;
-
-                // Reset the registered address section state
-                document.getElementById('registeredAddressSection').classList.remove('auto-filled');
-                document.getElementById('regStreetWithNumber').disabled = false;
-                document.getElementById('regPostalCode').disabled = false;
-                document.getElementById('regCity').disabled = false;
-
-                // Reset the mother's address section state
-                document.getElementById('motherAddressSection').classList.remove('auto-filled');
-                document.getElementById('motherStreetWithNumber').disabled = false;
-                document.getElementById('motherPostalCode').disabled = false;
-                document.getElementById('motherCity').disabled = false;
-
-                // Reset the father's address section state
-                document.getElementById('fatherAddressSection').classList.remove('auto-filled');
-                document.getElementById('fatherStreetWithNumber').disabled = false;
-                document.getElementById('fatherPostalCode').disabled = false;
-                document.getElementById('fatherCity').disabled = false;
+                // Reset address sections
+                resetAddressSection('sameAddress', 'registeredAddressSection', [
+                    'regStreetWithNumber', 'regPostalCode', 'regCity'
+                ]);
+                
+                resetAddressSection('motherSameAddress', 'motherAddressSection', [
+                    'motherStreetWithNumber', 'motherPostalCode', 'motherCity'
+                ]);
+                
+                resetAddressSection('fatherSameAddress', 'fatherAddressSection', [
+                    'fatherStreetWithNumber', 'fatherPostalCode', 'fatherCity'
+                ]);
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
@@ -419,189 +418,155 @@ document.addEventListener('DOMContentLoaded', function () {
                 field.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
+        
+        // Utility function for field validation with common patterns
+        function validateField(id, options = {}) {
+            const field = document.getElementById(id);
+            if (!field) return;
+            
+            const value = field.value.trim();
+            
+            // Required field validation
+            if (options.required && !value) {
+                markInvalid(field, options.requiredMessage || 'To pole jest wymagane');
+                return false;
+            }
+            
+            // Pattern validation (if field has value)
+            if (value && options.pattern && !options.pattern.test(value)) {
+                markInvalid(field, options.patternMessage || 'Wartość nie spełnia wymagań');
+                return false;
+            }
+            
+            return true;
+        }
 
         // Validate PESEL (11 digits)
-        const pesel = document.getElementById('pesel');
-        if (!pesel.value || !/^\d{11}$/.test(pesel.value)) {
-            markInvalid(pesel, !pesel.value ? 'Proszę podać numer PESEL' : 'PESEL musi składać się dokładnie z 11 cyfr');
-        }
+        validateField('pesel', {
+            required: true,
+            pattern: /^\d{11}$/,
+            requiredMessage: 'Proszę podać numer PESEL',
+            patternMessage: 'PESEL musi składać się dokładnie z 11 cyfr'
+        });
 
-        // Validate first name
-        const firstName = document.getElementById('firstName');
-        if (!firstName.value.trim()) {
-            markInvalid(firstName, 'Proszę podać imię ucznia');
-        }
-
-        // Validate last name
-        const lastName = document.getElementById('lastName');
-        if (!lastName.value.trim()) {
-            markInvalid(lastName, 'Proszę podać nazwisko ucznia');
-        }
-
-        // Validate birth date
-        const birthDate = document.getElementById('birthDate');
-        if (!birthDate.value) {
-            markInvalid(birthDate, 'Proszę podać datę urodzenia');
-        }
-
-        // Validate birthPlace
-        const birthPlace = document.getElementById('birthPlace');
-        if (!birthPlace.value.trim()) {
-            markInvalid(birthPlace, 'Proszę podać miejsce urodzenia');
-        }
-
-        // Validate residence street
-        const resStreetWithNumber = document.getElementById('resStreetWithNumber');
-        if (!resStreetWithNumber.value.trim()) {
-            markInvalid(resStreetWithNumber, 'Proszę podać ulicę wraz z numerem domu');
-        }
-
-        // Validate residence postal code
-        const resPostalCode = document.getElementById('resPostalCode');
-        if (!resPostalCode.value || !/^\d{2}-\d{3}$/.test(resPostalCode.value)) {
-            markInvalid(resPostalCode, 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)');
-        }
-
-        // Validate residence city
-        const resCity = document.getElementById('resCity');
-        if (!resCity.value.trim()) {
-            markInvalid(resCity, 'Proszę podać miejscowość');
-        }
+        // Validate name fields
+        validateField('firstName', { required: true, requiredMessage: 'Proszę podać imię ucznia' });
+        validateField('lastName', { required: true, requiredMessage: 'Proszę podać nazwisko ucznia' });
+        validateField('birthDate', { required: true, requiredMessage: 'Proszę podać datę urodzenia' });
+        validateField('birthPlace', { required: true, requiredMessage: 'Proszę podać miejsce urodzenia' });
+        
+        // Validate address fields
+        validateField('resStreetWithNumber', { required: true, requiredMessage: 'Proszę podać ulicę wraz z numerem domu' });
+        validateField('resPostalCode', {
+            required: true,
+            pattern: /^\d{2}-\d{3}$/,
+            requiredMessage: 'Proszę podać kod pocztowy',
+            patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
+        });
+        validateField('resCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
 
         // Validate registered address fields if "same address" is not checked
         const sameAddressCheckbox = document.getElementById('sameAddress');
         if (!sameAddressCheckbox.checked) {
-            const regStreetWithNumber = document.getElementById('regStreetWithNumber');
-            if (!regStreetWithNumber.value.trim()) {
-                markInvalid(regStreetWithNumber, 'Proszę podać ulicę wraz z numerem domu w adresie zameldowania');
-            }
-
-            const regPostalCode = document.getElementById('regPostalCode');
-            if (!regPostalCode.value || !/^\d{2}-\d{3}$/.test(regPostalCode.value)) {
-                markInvalid(regPostalCode, 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)');
-            }
-
-            const regCity = document.getElementById('regCity');
-            if (!regCity.value.trim()) {
-                markInvalid(regCity, 'Proszę podać miejscowość');
-            }
+            validateField('regStreetWithNumber', { 
+                required: true, 
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu w adresie zameldowania' 
+            });
+            validateField('regPostalCode', {
+                required: true,
+                pattern: /^\d{2}-\d{3}$/,
+                requiredMessage: 'Proszę podać kod pocztowy',
+                patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
+            });
+            validateField('regCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
         }
 
-        // Validate current school information
-        const currentSchoolName = document.getElementById('currentSchoolName');
-        if (!currentSchoolName.value.trim()) {
-            markInvalid(currentSchoolName, 'Proszę podać nazwę obecnej szkoły ucznia');
-        }
-
-        const currentSchoolAddress = document.getElementById('currentSchoolAddress');
-        if (!currentSchoolAddress.value.trim()) {
-            markInvalid(currentSchoolAddress, 'Proszę podać adres obecnej szkoły ucznia');
-        }
-
-        // Validate district school information
-        const districtSchoolName = document.getElementById('districtSchoolName');
-        if (!districtSchoolName.value.trim()) {
-            markInvalid(districtSchoolName, 'Proszę podać nazwę szkoły rejonowej');
-        }
-
-        const districtSchoolAddress = document.getElementById('districtSchoolAddress');
-        if (!districtSchoolAddress.value.trim()) {
-            markInvalid(districtSchoolAddress, 'Proszę podać adres szkoły rejonowej');
-        }
-
-        const districtSchoolEmail = document.getElementById('districtSchoolEmail');
-        if (!districtSchoolEmail.value.trim()) {
-            markInvalid(districtSchoolEmail, 'Proszę podać adres e-mail szkoły rejonowej');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(districtSchoolEmail.value)) {
-            markInvalid(districtSchoolEmail, 'Proszę podać prawidłowy adres e-mail szkoły rejonowej');
-        }
+        // Validate school information
+        validateField('currentSchoolName', { 
+            required: true, 
+            requiredMessage: 'Proszę podać nazwę obecnej szkoły ucznia' 
+        });
+        validateField('currentSchoolAddress', { 
+            required: true, 
+            requiredMessage: 'Proszę podać adres obecnej szkoły ucznia' 
+        });
+        validateField('districtSchoolName', { 
+            required: true, 
+            requiredMessage: 'Proszę podać nazwę szkoły rejonowej' 
+        });
+        validateField('districtSchoolAddress', { 
+            required: true, 
+            requiredMessage: 'Proszę podać adres szkoły rejonowej' 
+        });
+        validateField('districtSchoolEmail', {
+            required: true,
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            requiredMessage: 'Proszę podać adres e-mail szkoły rejonowej',
+            patternMessage: 'Proszę podać prawidłowy adres e-mail szkoły rejonowej'
+        });
 
         // Validate mother's information
-        const motherFirstName = document.getElementById('motherFirstName');
-        if (!motherFirstName.value.trim()) {
-            markInvalid(motherFirstName, 'Proszę podać imię matki');
-        }
-
-        const motherLastName = document.getElementById('motherLastName');
-        if (!motherLastName.value.trim()) {
-            markInvalid(motherLastName, 'Proszę podać nazwisko matki');
-        }
-
-        const motherPhone = document.getElementById('motherPhone');
-        if (!motherPhone.value.trim()) {
-            markInvalid(motherPhone, 'Proszę podać numer telefonu matki');
-        } else if (!/^\d{9}$/.test(motherPhone.value)) {
-            markInvalid(motherPhone, 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji');
-        }
-
-        const motherEmail = document.getElementById('motherEmail');
-        if (!motherEmail.value.trim()) {
-            markInvalid(motherEmail, 'Proszę podać adres e-mail matki');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(motherEmail.value)) {
-            markInvalid(motherEmail, 'Proszę podać prawidłowy adres e-mail matki');
-        }
+        validateField('motherFirstName', { required: true, requiredMessage: 'Proszę podać imię matki' });
+        validateField('motherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko matki' });
+        validateField('motherPhone', {
+            required: true,
+            pattern: /^\d{9}$/,
+            requiredMessage: 'Proszę podać numer telefonu matki',
+            patternMessage: 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji'
+        });
+        validateField('motherEmail', {
+            required: true,
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            requiredMessage: 'Proszę podać adres e-mail matki',
+            patternMessage: 'Proszę podać prawidłowy adres e-mail matki'
+        });
 
         // Validate mother's address if checkbox is not checked
         const motherSameAddressCheckbox = document.getElementById('motherSameAddress');
         if (!motherSameAddressCheckbox.checked) {
-            const motherStreetWithNumber = document.getElementById('motherStreetWithNumber');
-            if (!motherStreetWithNumber.value.trim()) {
-                markInvalid(motherStreetWithNumber, 'Proszę podać ulicę wraz z numerem domu mamy');
-            }
-
-            const motherPostalCode = document.getElementById('motherPostalCode');
-            if (!motherPostalCode.value || !/^\d{2}-\d{3}$/.test(motherPostalCode.value)) {
-                markInvalid(motherPostalCode, 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)');
-            }
-
-            const motherCity = document.getElementById('motherCity');
-            if (!motherCity.value.trim()) {
-                markInvalid(motherCity, 'Proszę podać miejscowość');
-            }
+            validateField('motherStreetWithNumber', { 
+                required: true, 
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu mamy' 
+            });
+            validateField('motherPostalCode', {
+                required: true,
+                pattern: /^\d{2}-\d{3}$/,
+                requiredMessage: 'Proszę podać kod pocztowy',
+                patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
+            });
+            validateField('motherCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
         }
 
         // Validate father's information
-        const fatherFirstName = document.getElementById('fatherFirstName');
-        if (!fatherFirstName.value.trim()) {
-            markInvalid(fatherFirstName, 'Proszę podać imię ojca');
-        }
-
-        const fatherLastName = document.getElementById('fatherLastName');
-        if (!fatherLastName.value.trim()) {
-            markInvalid(fatherLastName, 'Proszę podać nazwisko ojca');
-        }
-
-        const fatherPhone = document.getElementById('fatherPhone');
-        if (!fatherPhone.value.trim()) {
-            markInvalid(fatherPhone, 'Proszę podać numer telefonu ojca');
-        } else if (!/^\d{9}$/.test(fatherPhone.value)) {
-            markInvalid(fatherPhone, 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji');
-        }
-
-        const fatherEmail = document.getElementById('fatherEmail');
-        if (!fatherEmail.value.trim()) {
-            markInvalid(fatherEmail, 'Proszę podać adres e-mail ojca');
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fatherEmail.value)) {
-            markInvalid(fatherEmail, 'Proszę podać prawidłowy adres e-mail ojca');
-        }
+        validateField('fatherFirstName', { required: true, requiredMessage: 'Proszę podać imię ojca' });
+        validateField('fatherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko ojca' });
+        validateField('fatherPhone', {
+            required: true,
+            pattern: /^\d{9}$/,
+            requiredMessage: 'Proszę podać numer telefonu ojca',
+            patternMessage: 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji'
+        });
+        validateField('fatherEmail', {
+            required: true,
+            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            requiredMessage: 'Proszę podać adres e-mail ojca',
+            patternMessage: 'Proszę podać prawidłowy adres e-mail ojca'
+        });
 
         // Validate father's address if checkbox is not checked
         const fatherSameAddressCheckbox = document.getElementById('fatherSameAddress');
         if (!fatherSameAddressCheckbox.checked) {
-            const fatherStreetWithNumber = document.getElementById('fatherStreetWithNumber');
-            if (!fatherStreetWithNumber.value.trim()) {
-                markInvalid(fatherStreetWithNumber, 'Proszę podać ulicę wraz z numerem domu ojca');
-            }
-
-            const fatherPostalCode = document.getElementById('fatherPostalCode');
-            if (!fatherPostalCode.value || !/^\d{2}-\d{3}$/.test(fatherPostalCode.value)) {
-                markInvalid(fatherPostalCode, 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)');
-            }
-
-            const fatherCity = document.getElementById('fatherCity');
-            if (!fatherCity.value.trim()) {
-                markInvalid(fatherCity, 'Proszę podać miejscowość');
-            }
+            validateField('fatherStreetWithNumber', { 
+                required: true, 
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu ojca' 
+            });
+            validateField('fatherPostalCode', {
+                required: true,
+                pattern: /^\d{2}-\d{3}$/,
+                requiredMessage: 'Proszę podać kod pocztowy',
+                patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
+            });
+            validateField('fatherCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
         }
 
         // Validate if agreement is checked
@@ -625,6 +590,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return isValid;
     }
+
+    // Restrict input to digits only for phone number fields
+    ['motherPhone', 'fatherPhone'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let inputValue = e.target.value.replace(/[^0-9]/g, '');
+            
+            // Limit to 9 digits
+            if (inputValue.length > 9) {
+                inputValue = inputValue.slice(0, 9);
+            }
+            
+            // Update the input value
+            e.target.value = inputValue;
+        });
+    });
+
+    // Format ID series inputs to uppercase letters only
+    ['motherIdSeries', 'fatherIdSeries'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function(e) {
+            // Remove any non-letter characters and convert to uppercase
+            let inputValue = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase();
+            
+            // Limit to 3 characters
+            if (inputValue.length > 3) {
+                inputValue = inputValue.slice(0, 3);
+            }
+            
+            // Update the input value
+            e.target.value = inputValue;
+        });
+    });
+    
+    // Format ID number inputs to digits only
+    ['motherIdNumber', 'fatherIdNumber'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let inputValue = e.target.value.replace(/[^0-9]/g, '');
+            
+            // Limit to 6 characters
+            if (inputValue.length > 6) {
+                inputValue = inputValue.slice(0, 6);
+            }
+            
+            // Update the input value
+            e.target.value = inputValue;
+        });
+    });
 
     // Auto-format postal code inputs as user types
     ['resPostalCode', 'regPostalCode', 'motherPostalCode', 'fatherPostalCode'].forEach(function (fieldId) {
