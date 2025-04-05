@@ -241,20 +241,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // If form is valid, collect the data
         const formData = new FormData(registrationForm);
-        const formDataObj = {};
-
-        formData.forEach((value, key) => {
-            formDataObj[key] = value;
-        });
-
-        // Create full address strings from the address fields
-        formDataObj.fullResidenceAddress = `${formDataObj.resStreetWithNumber}, ${formDataObj.resPostalCode} ${formDataObj.resCity}`;
-
-        if (sameAddressCheckbox.checked) {
-            formDataObj.fullRegisteredAddress = formDataObj.fullResidenceAddress;
-        } else {
-            formDataObj.fullRegisteredAddress = `${formDataObj.regStreetWithNumber}, ${formDataObj.regPostalCode} ${formDataObj.regCity}`;
-        }
 
         // URL for Google Sheets script
         const sheetScriptURL = "https://script.google.com/macros/s/AKfycbwZJBpP5An4M0MdDYPeGopx7dvk-5-NerMa-9-dRg1kab85Zz9gU9sUIP6Qb99pnx5N/exec";
@@ -269,18 +255,27 @@ document.addEventListener('DOMContentLoaded', function () {
         // Send data to Google Sheets
         fetch(sheetScriptURL, {
             method: 'POST',
-            mode: 'no-cors', // Required for Google Apps Script
             cache: 'no-cache',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams(formData)
+            body: new URLSearchParams(formData).toString()
         })
-            .then(() => {
+            .then(response => {
+                // Google Apps Script returns success via HTTP code, but may have application-level errors
+                // We're converting the response to text to handle both success and Google Apps Script errors
+                return response.text().then(text => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}: ${text}`);
+                    }
+                    return text;
+                });
+            })
+            .then(data => {
                 console.log('Form data submitted successfully');
 
                 // Display confirmation message
-                showConfirmationMessage(formDataObj);
+                showConfirmationMessage();
 
                 // Reset form after successful submission
                 registrationForm.reset();
@@ -568,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Display confirmation message after form submission
-    function showConfirmationMessage(data) {
+    function showConfirmationMessage() {
         // Create a modal with bootstrap if available
         if (typeof bootstrap !== 'undefined') {
             // Check if there's already a confirmation modal
@@ -579,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 confirmationModal.remove();
             }
 
-            // Create modal HTML
+            // Create modal HTML with generic thank you message
             const modalHTML = `
                 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
@@ -589,15 +584,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Dziękujemy za rejestrację ${data.firstName} ${data.lastName} do klasy ${data.grade}!</p>
-                                <p><strong>Adres zamieszkania:</strong> ${data.fullResidenceAddress}</p>
-                                <p><strong>Adres zameldowania:</strong> ${data.fullRegisteredAddress}</p>
-                                <p><strong>Obecna szkoła:</strong> ${data.currentSchoolName}</p>
-                                <p><strong>Szkoła rejonowa:</strong> ${data.districtSchoolName}</p>
-                                <p><strong>E-mail szkoły rejonowej:</strong> ${data.districtSchoolEmail}</p>
-                                <p><strong>Dane kontaktowe matki:</strong> ${data.motherFirstName} ${data.motherLastName}, tel. ${data.motherPhone}, e-mail: ${data.motherEmail}</p>
-                                <p><strong>Dane kontaktowe ojca:</strong> ${data.fatherFirstName} ${data.fatherLastName}, tel. ${data.fatherPhone}, e-mail: ${data.fatherEmail}</p>
-                                <p>Zgłoszenie zostało przyjęte. Na adres email rodziców została wysłana wiadomość z potwierdzeniem.</p>
+                                <p>Dziękujemy za wypełnienie formularza rejestracyjnego!</p>
+                                <p>Zgłoszenie zostało przyjęte.</p>
+                                <p>Skontaktujemy się z Państwem w najbliższym czasie.</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
@@ -615,16 +604,9 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.show();
         } else {
             // Fallback if Bootstrap is not available
-            alert(`Dziękujemy za rejestrację ${data.firstName} ${data.lastName} do klasy ${data.grade}!
-Adres zamieszkania: ${data.fullResidenceAddress}
-Adres zameldowania: ${data.fullRegisteredAddress}
-Obecna szkoła: ${data.currentSchoolName}
-Szkoła rejonowa: ${data.districtSchoolName}
-E-mail szkoły rejonowej: ${data.districtSchoolEmail}
-Dane kontaktowe matki: ${data.motherFirstName} ${data.motherLastName}, tel. ${data.motherPhone}, e-mail: ${data.motherEmail}
-Dane kontaktowe ojca: ${data.fatherFirstName} ${data.fatherLastName}, tel. ${data.fatherPhone}, e-mail: ${data.fatherEmail}
-Zgłoszenie zostało przyjęte. 
-Na adres email rodziców została wysłana wiadomość z potwierdzeniem.`);
+            alert(`Dziękujemy za wypełnienie formularza rejestracyjnego!
+Zgłoszenie zostało przyjęte.
+Skontaktujemy się z Państwem w najbliższym czasie.`);
         }
     }
 });
