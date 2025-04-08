@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
-    const sameAddressCheckbox = document.getElementById('sameAddress');
-    const registeredAddressSection = document.getElementById('registeredAddressSection');
 
     // Function to generate a random 11-digit PESEL number
     function generateRandomPesel() {
@@ -22,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Set a date of birth (6 years ago from current date)
         const birthDate = new Date();
-        birthDate.setFullYear(birthDate.getFullYear() - 9);
+                birthDate.setFullYear(birthDate.getFullYear() - 9);
         document.getElementById('birthDate').value = birthDate.toISOString().split('T')[0];
 
         document.getElementById('birthPlace').value = 'Warszawa';
@@ -274,16 +272,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Format the birth date value to DD.MM.YYYY before submission
         const birthDateInput = document.getElementById('birthDate');
         if (birthDateInput && birthDateInput.value) {
-            // Get the ISO formatted date (YYYY-MM-DD)
-            const isoDate = birthDateInput.value;
-            
-            // Parse the date components
-            const [year, month, day] = isoDate.split('-');
-            
-            // Create formatted date (DD.MM.YYYY)
-            const formattedDate = `${day}.${month}.${year}`;
-            
-            // Replace the value in formData
+            // Convert YYYY-MM-DD to DD.MM.YYYY
+            const formattedDate = birthDateInput.value.split('-').reverse().join('.');
             formData.set('birthDate', formattedDate);
         }
 
