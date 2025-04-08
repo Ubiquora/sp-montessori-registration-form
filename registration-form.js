@@ -1,22 +1,147 @@
 document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
 
+    /**
+     * General-purpose function to toggle section visibility based on checkbox state
+     * @param {HTMLElement} checkbox - The checkbox element that controls visibility
+     * @param {HTMLElement[]} sections - Array of sections to toggle visibility
+     * @param {Function} [onCheck] - Optional callback when checkbox is checked
+     * @param {Function} [onUncheck] - Optional callback when checkbox is unchecked
+     */
+    function setupCheckboxToggle(checkbox, sections, onCheck, onUncheck) {
+        if (!checkbox) return;
+        
+        checkbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            
+            // Toggle sections visibility
+            sections.forEach(section => {
+                if (section) {
+                    section.style.display = isChecked ? 'none' : 'block';
+                }
+            });
+            
+            // Execute callbacks if provided
+            if (isChecked && typeof onCheck === 'function') {
+                onCheck();
+            } else if (!isChecked && typeof onUncheck === 'function') {
+                onUncheck();
+            }
+        });
+    }
+    
+    // Constants and patterns that will be reused
+    const PATTERNS = {
+        POSTAL_CODE: /^\d{2}-\d{3}$/,
+        EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        PHONE: /^[\d\s+\-()\[\]]{6,25}$/
+    };
+    
     // Set up event handler for the noCurrentSchool checkbox
     const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
     const currentSchoolSection = document.getElementById('currentSchoolSection');
     
-    if (noCurrentSchoolCheckbox && currentSchoolSection) {
-        noCurrentSchoolCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                // Hide the current school fields and clear their values
-                currentSchoolSection.style.display = 'none';
-                document.getElementById('currentSchoolName').value = '';
-                document.getElementById('currentSchoolAddress').value = '';
-            } else {
-                // Show the current school fields
-                currentSchoolSection.style.display = 'block';
+    setupCheckboxToggle(
+        noCurrentSchoolCheckbox, 
+        [currentSchoolSection],
+        // On check callback - clear fields
+        function() {
+            ['currentSchoolName', 'currentSchoolAddress'].forEach(id => {
+                const field = document.getElementById(id);
+                if (field) field.value = '';
+            });
+        }
+    );
+
+    // Set up event handler for the parent availability checkboxes
+    const noMotherCheckbox = document.getElementById('noMother');
+    const noFatherCheckbox = document.getElementById('noFather');
+    const motherDataSection = document.getElementById('motherDataSection');
+    const fatherDataSection = document.getElementById('fatherDataSection');
+    const motherAddressSection = document.getElementById('motherAddressSection');
+    const fatherAddressSection = document.getElementById('fatherAddressSection');
+    const noMotherDisabledHint = document.getElementById('noMotherDisabledHint');
+    const noFatherDisabledHint = document.getElementById('noFatherDisabledHint');
+    
+    // Setup parent checkbox toggle functionality
+    function setupParentCheckbox(checkbox, dataSections, clearPrefix, otherCheckbox, otherHint) {
+        setupCheckboxToggle(
+            checkbox,
+            dataSections,
+            // On check callback
+            function() {
+                // Clear fields
+                clearParentFields(clearPrefix);
+                
+                // Disable other checkbox (need at least one parent)
+                if (otherCheckbox) {
+                    otherCheckbox.disabled = true;
+                    
+                    // Show hint
+                    if (otherHint) {
+                        otherHint.classList.remove('d-none');
+                    }
+                }
+            },
+            // On uncheck callback
+            function() {
+                // Re-enable other checkbox
+                if (otherCheckbox) {
+                    otherCheckbox.disabled = false;
+                    
+                    // Hide hint
+                    if (otherHint) {
+                        otherHint.classList.add('d-none');
+                    }
+                }
+            }
+        );
+    }
+    
+    // Setup parent checkboxes with DRY implementation
+    setupParentCheckbox(
+        noMotherCheckbox, 
+        [motherDataSection, motherAddressSection],
+        'mother',
+        noFatherCheckbox,
+        noFatherDisabledHint
+    );
+    
+    setupParentCheckbox(
+        noFatherCheckbox,
+        [fatherDataSection, fatherAddressSection],
+        'father',
+        noMotherCheckbox,
+        noMotherDisabledHint
+    );
+    
+    // Helper function to clear parent fields
+    function clearParentFields(parentType) {
+        const fieldPrefixes = ['FirstName', 'LastName', 'Phone', 'Email', 'Id', 'StreetWithNumber', 'PostalCode', 'City'];
+        
+        fieldPrefixes.forEach(prefix => {
+            const fieldId = parentType + prefix;
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = '';
+                field.disabled = false; // Ensure fields are not disabled
+                field.classList.remove('is-invalid');
+                field.classList.remove('is-valid');
             }
         });
+        
+        // Uncheck the same address checkbox if it exists
+        const sameAddressCheckbox = document.getElementById(parentType + 'SameAddress');
+        if (sameAddressCheckbox) {
+            sameAddressCheckbox.checked = false;
+        }
+        
+        // Remove auto-filled styling from parent address section
+        const addressSectionId = parentType + 'AddressSection';
+        const addressSection = document.getElementById(addressSectionId);
+        if (addressSection) {
+            addressSection.classList.remove('auto-filled');
+        }
     }
 
     // Function to generate a random 11-digit PESEL number
@@ -88,46 +213,66 @@ document.addEventListener('DOMContentLoaded', function () {
     // Call the function to prepopulate form with dummy data
     prepopulateFormWithDummyData();
 
+    /**
+     * Generic function to setup input validation and formatting
+     * @param {string} fieldId - ID of the field to set up
+     * @param {Object} options - Configuration options
+     */
+    function setupInputValidation(fieldId, options) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        field.addEventListener('input', function(e) {
+            let inputValue = e.target.value;
+            
+            // Apply input transformation if provided
+            if (typeof options.transform === 'function') {
+                inputValue = options.transform(inputValue);
+                e.target.value = inputValue;
+            }
+            
+            // Check validation if provided
+            if (typeof options.validate === 'function') {
+                options.validate(e.target, inputValue);
+            }
+        });
+    }
 
     // Restrict input to digits only for PESEL field, max 11 chars
-    document.getElementById('pesel').addEventListener('input', function (e) {
-        // Replace any non-digit characters with empty string
-        let inputValue = e.target.value.replace(/[^0-9]/g, '');
+    setupInputValidation('pesel', {
+        transform: function(value) {
+            // Replace any non-digit characters and limit to 11 characters
+            let cleaned = value.replace(/[^0-9]/g, '');
+            return cleaned.length > 11 ? cleaned.slice(0, 11) : cleaned;
+        },
+        validate: function(field, value) {
+            // Real-time validation feedback
+            const peselFeedback = document.getElementById('pesel-feedback');
 
-        // Ensure we don't exceed 11 characters
-        if (inputValue.length > 11) {
-            inputValue = inputValue.slice(0, 11);
-        }
-
-        // Update the input value with digits only
-        e.target.value = inputValue;
-
-        // Real-time validation feedback
-        const peselFeedback = document.getElementById('pesel-feedback');
-
-        if (inputValue && inputValue.length !== 11) {
-            // If there's any input but it's not 11 digits, show error
-            if (!peselFeedback) {
-                // Create feedback element if it doesn't exist
-                const feedbackEl = document.createElement('div');
-                feedbackEl.id = 'pesel-feedback';
-                feedbackEl.className = 'invalid-feedback d-block';
-                feedbackEl.textContent = 'PESEL musi składać się dokładnie z 11 cyfr';
-                e.target.classList.add('is-invalid');
-                e.target.parentNode.appendChild(feedbackEl);
-            }
-        } else if (inputValue.length === 11) {
-            // Valid PESEL (11 digits)
-            e.target.classList.remove('is-invalid');
-            e.target.classList.add('is-valid');
-            if (peselFeedback) {
+            if (value && value.length !== 11) {
+                // If there's any input but it's not 11 digits, show error
+                if (!peselFeedback) {
+                    // Create feedback element if it doesn't exist
+                    const feedbackEl = document.createElement('div');
+                    feedbackEl.id = 'pesel-feedback';
+                    feedbackEl.className = 'invalid-feedback d-block';
+                    feedbackEl.textContent = 'PESEL musi składać się dokładnie z 11 cyfr';
+                    field.classList.add('is-invalid');
+                    field.parentNode.appendChild(feedbackEl);
+                }
+            } else if (value.length === 11) {
+                // Valid PESEL (11 digits)
+                field.classList.remove('is-invalid');
+                field.classList.add('is-valid');
+                if (peselFeedback) {
+                    peselFeedback.remove();
+                }
+            } else if (peselFeedback) {
+                // Remove feedback if input is empty
                 peselFeedback.remove();
+                field.classList.remove('is-invalid');
+                field.classList.remove('is-valid');
             }
-        } else if (peselFeedback) {
-            // Remove feedback if input is empty
-            peselFeedback.remove();
-            e.target.classList.remove('is-invalid');
-            e.target.classList.remove('is-valid');
         }
     });
 
@@ -231,28 +376,32 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Set up address copying features
+    // Set up address copying features with a common field mapping function
+    function setupAllAddressCopyFeatures() {
+        // 1. Registered address copy from residence address
+        setupAddressCopyFeature('sameAddress', 'registeredAddressSection', {
+            'resStreetWithNumber': 'regStreetWithNumber',
+            'resPostalCode': 'regPostalCode',
+            'resCity': 'regCity'
+        });
 
-    // 1. Registered address copy from residence address
-    setupAddressCopyFeature('sameAddress', 'registeredAddressSection', {
-        'resStreetWithNumber': 'regStreetWithNumber',
-        'resPostalCode': 'regPostalCode',
-        'resCity': 'regCity'
-    });
+        // 2. Mother's address copy from residence address
+        setupAddressCopyFeature('motherSameAddress', 'motherAddressSection', {
+            'resStreetWithNumber': 'motherStreetWithNumber',
+            'resPostalCode': 'motherPostalCode',
+            'resCity': 'motherCity'
+        });
 
-    // 2. Mother's address copy from residence address
-    setupAddressCopyFeature('motherSameAddress', 'motherAddressSection', {
-        'resStreetWithNumber': 'motherStreetWithNumber',
-        'resPostalCode': 'motherPostalCode',
-        'resCity': 'motherCity'
-    });
-
-    // 3. Father's address copy from residence address
-    setupAddressCopyFeature('fatherSameAddress', 'fatherAddressSection', {
-        'resStreetWithNumber': 'fatherStreetWithNumber',
-        'resPostalCode': 'fatherPostalCode',
-        'resCity': 'fatherCity'
-    });
+        // 3. Father's address copy from residence address
+        setupAddressCopyFeature('fatherSameAddress', 'fatherAddressSection', {
+            'resStreetWithNumber': 'fatherStreetWithNumber',
+            'resPostalCode': 'fatherPostalCode',
+            'resCity': 'fatherCity'
+        });
+    }
+    
+    // Call the function to set up all address copy features
+    setupAllAddressCopyFeatures();
 
     // Helper function to reset address sections after form submission or when needed
     function resetAddressSection(checkboxId, sectionId, fieldIds) {
@@ -294,30 +443,8 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.set('birthDate', formattedDate);
         }
         
-        // Format phone numbers to standardized format (remove spaces, dashes, brackets)
-        ['motherPhone', 'fatherPhone'].forEach(fieldId => {
-            const phoneInput = document.getElementById(fieldId);
-            if (phoneInput && phoneInput.value) {
-                // Keep plus sign for international numbers, remove all other non-digit characters
-                let formattedNumber = phoneInput.value;
-                const startsWithPlus = formattedNumber.startsWith('+');
-                
-                // For Google Sheets, prepend with a single quote (') if it has a plus sign
-                // This forces Google Sheets to treat it as text and not a formula
-                if (startsWithPlus) {
-                    // Remove non-digits except the plus sign
-                    formattedNumber = '+' + formattedNumber.substring(1).replace(/[^\d]/g, '');
-                    // Add single quote at the beginning to prevent Google Sheets formula interpretation
-                    formattedNumber = "'" + formattedNumber;
-                } else {
-                    // Not international format, just remove formatting characters
-                    formattedNumber = formattedNumber.replace(/[^\d]/g, '');
-                }
-                
-                // Update the value in the form data
-                formData.set(fieldId, formattedNumber);
-            }
-        });
+        // Format phone numbers for Google Sheets
+        formatPhoneNumbersForSubmission(formData);
 
         // Re-disable the fields that were previously disabled
         disabledFields.forEach(field => {
@@ -385,6 +512,36 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
+    /**
+     * Format phone numbers to standardized format for Google Sheets
+     * @param {FormData} formData - The form data object
+     */
+    function formatPhoneNumbersForSubmission(formData) {
+        ['motherPhone', 'fatherPhone'].forEach(fieldId => {
+            const phoneInput = document.getElementById(fieldId);
+            if (phoneInput && phoneInput.value) {
+                // Keep plus sign for international numbers, remove all other non-digit characters
+                let formattedNumber = phoneInput.value;
+                const startsWithPlus = formattedNumber.startsWith('+');
+                
+                // For Google Sheets, prepend with a single quote (') if it has a plus sign
+                // This forces Google Sheets to treat it as text and not a formula
+                if (startsWithPlus) {
+                    // Remove non-digits except the plus sign
+                    formattedNumber = '+' + formattedNumber.substring(1).replace(/[^\d]/g, '');
+                    // Add single quote at the beginning to prevent Google Sheets formula interpretation
+                    formattedNumber = "'" + formattedNumber;
+                } else {
+                    // Not international format, just remove formatting characters
+                    formattedNumber = formattedNumber.replace(/[^\d]/g, '');
+                }
+                
+                // Update the value in the form data
+                formData.set(fieldId, formattedNumber);
+            }
+        });
+    }
+
     // Validate form fields
     function validateForm() {
         let isValid = true;
@@ -442,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return true;
         }
 
-        // Validate PESEL (11 digits)
+        // Validate basic student information
         validateField('pesel', {
             required: true,
             pattern: /^\d{11}$/,
@@ -460,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('resStreetWithNumber', { required: true, requiredMessage: 'Proszę podać ulicę wraz z numerem domu' });
         validateField('resPostalCode', {
             required: true,
-            pattern: /^\d{2}-\d{3}$/,
+            pattern: PATTERNS.POSTAL_CODE,
             requiredMessage: 'Proszę podać kod pocztowy',
             patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
         });
@@ -475,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             validateField('regPostalCode', {
                 required: true,
-                pattern: /^\d{2}-\d{3}$/,
+                pattern: PATTERNS.POSTAL_CODE,
                 requiredMessage: 'Proszę podać kod pocztowy',
                 patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
             });
@@ -507,82 +664,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         validateField('districtSchoolEmail', {
             required: true,
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            pattern: PATTERNS.EMAIL,
             requiredMessage: 'Proszę podać adres e-mail szkoły rejonowej',
             patternMessage: 'Proszę podać prawidłowy adres e-mail szkoły rejonowej'
         });
 
-        // Validate mother's information
-        validateField('motherFirstName', { required: true, requiredMessage: 'Proszę podać imię mamy' });
-        validateField('motherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko mamy' });
-        validateField('motherPhone', {
-            required: true,
-            pattern: /^[\d\s+\-()\[\]]{6,25}$/,
-            requiredMessage: 'Proszę podać numer telefonu mamy',
-            patternMessage: 'Proszę podać prawidłowy numer telefonu'
-        });
-        validateField('motherEmail', {
-            required: true,
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            requiredMessage: 'Proszę podać adres e-mail mamy',
-            patternMessage: 'Proszę podać prawidłowy adres e-mail mamy'
-        });
-        validateField('motherId', { 
-            required: true, 
-            requiredMessage: 'Proszę podać numer dokumentu tożsamości mamy'
-        });
-
-        // Validate mother's address if checkbox is not checked
-        const motherSameAddressCheckbox = document.getElementById('motherSameAddress');
-        if (!motherSameAddressCheckbox.checked) {
-            validateField('motherStreetWithNumber', {
-                required: true,
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu mamy'
-            });
-            validateField('motherPostalCode', {
-                required: true,
-                pattern: /^\d{2}-\d{3}$/,
-                requiredMessage: 'Proszę podać kod pocztowy',
-                patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
-            });
-            validateField('motherCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
-        }
-
-        // Validate father's information
-        validateField('fatherFirstName', { required: true, requiredMessage: 'Proszę podać imię taty' });
-        validateField('fatherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko taty' });
-        validateField('fatherPhone', {
-            required: true,
-            pattern: /^[\d\s+\-()\[\]]{6,25}$/,
-            requiredMessage: 'Proszę podać numer telefonu taty',
-            patternMessage: 'Proszę podać prawidłowy numer telefonu'
-        });
-        validateField('fatherEmail', {
-            required: true,
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            requiredMessage: 'Proszę podać adres e-mail taty',
-            patternMessage: 'Proszę podać prawidłowy adres e-mail taty'
-        });
-        validateField('fatherId', { 
-            required: true, 
-            requiredMessage: 'Proszę podać numer dokumentu tożsamości taty'
-        });
-
-        // Validate father's address if checkbox is not checked
-        const fatherSameAddressCheckbox = document.getElementById('fatherSameAddress');
-        if (!fatherSameAddressCheckbox.checked) {
-            validateField('fatherStreetWithNumber', {
-                required: true,
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu taty'
-            });
-            validateField('fatherPostalCode', {
-                required: true,
-                pattern: /^\d{2}-\d{3}$/,
-                requiredMessage: 'Proszę podać kod pocztowy',
-                patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
-            });
-            validateField('fatherCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
-        }
+        // Validate parent information using centralized validation
+        validateParentInfo('mother', noMotherCheckbox);
+        validateParentInfo('father', noFatherCheckbox);
 
         // Validate if agreement is checked
         const agreement = document.getElementById('agreement');
@@ -604,40 +693,97 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return isValid;
-    }
+        
+        // Helper function to validate parent information
+        function validateParentInfo(parentType, checkboxElement) {
+            if (!checkboxElement || !checkboxElement.checked) {
+                // Only validate if parent data should be provided
+                validateField(parentType + 'FirstName', { 
+                    required: true, 
+                    requiredMessage: 'Proszę podać imię ' + (parentType === 'mother' ? 'mamy' : 'taty') 
+                });
+                
+                validateField(parentType + 'LastName', {
+                    required: true,
+                    requiredMessage: 'Proszę podać nazwisko ' + (parentType === 'mother' ? 'mamy' : 'taty')
+                });
+                
+                validateField(parentType + 'Phone', {
+                    required: true,
+                    pattern: PATTERNS.PHONE,
+                    requiredMessage: 'Proszę podać numer telefonu ' + (parentType === 'mother' ? 'mamy' : 'taty'),
+                    patternMessage: 'Proszę podać prawidłowy numer telefonu'
+                });
+                
+                validateField(parentType + 'Email', {
+                    required: true,
+                    pattern: PATTERNS.EMAIL,
+                    requiredMessage: 'Proszę podać adres e-mail ' + (parentType === 'mother' ? 'mamy' : 'taty'),
+                    patternMessage: 'Proszę podać prawidłowy adres e-mail ' + (parentType === 'mother' ? 'mamy' : 'taty')
+                });
+                
+                validateField(parentType + 'Id', { 
+                    required: true, 
+                    requiredMessage: 'Proszę podać numer dokumentu tożsamości ' + (parentType === 'mother' ? 'mamy' : 'taty')
+                });
 
-    // Restrict input for phone number fields but allow flexible formats
-    ['motherPhone', 'fatherPhone'].forEach(function (fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function (e) {
-            // Allow digits, plus sign, spaces, dashes, and brackets for readability and international formats
-            let inputValue = e.target.value.replace(/[^\d\s+\-()]/g, '');
-            
-            // Ensure plus sign is only at the beginning if present
-            if (inputValue.indexOf('+') > 0) {
-                // Remove additional plus signs
-                inputValue = inputValue.replace(/\+/g, '');
-                // Add plus sign at the beginning if not already there
-                if (!inputValue.startsWith('+')) {
-                    inputValue = '+' + inputValue;
+                // Validate parent's address if "same address" checkbox is not checked
+                const sameAddressCheckbox = document.getElementById(parentType + 'SameAddress');
+                if (!sameAddressCheckbox.checked) {
+                    validateField(parentType + 'StreetWithNumber', {
+                        required: true,
+                        requiredMessage: 'Proszę podać ulicę wraz z numerem domu ' + (parentType === 'mother' ? 'mamy' : 'taty')
+                    });
+                    
+                    validateField(parentType + 'PostalCode', {
+                        required: true,
+                        pattern: PATTERNS.POSTAL_CODE,
+                        requiredMessage: 'Proszę podać kod pocztowy',
+                        patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
+                    });
+                    
+                    validateField(parentType + 'City', { 
+                        required: true, 
+                        requiredMessage: 'Proszę podać miejscowość' 
+                    });
                 }
             }
-            
-            // Limit to reasonable length for international numbers with formatting
-            if (inputValue.length > 25) {
-                inputValue = inputValue.slice(0, 25);
-            }
-            
-            // Update the input value
-            e.target.value = inputValue;
-        });
-    });
+        }
+    }
 
-    // Auto-format postal code inputs as user types
-    ['resPostalCode', 'regPostalCode', 'motherPostalCode', 'fatherPostalCode'].forEach(function (fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function (e) {
-            e.target.value = formatPostalCode(e.target.value);
+    // Set up input formatting for phone and postal code fields
+    function setupInputFormatters() {
+        // Phone number input formatting
+        ['motherPhone', 'fatherPhone'].forEach(function (fieldId) {
+            setupInputValidation(fieldId, {
+                transform: function(value) {
+                    // Allow digits, plus sign, spaces, dashes, and brackets
+                    let cleaned = value.replace(/[^\d\s+\-()]/g, '');
+                    
+                    // Ensure plus sign is only at the beginning if present
+                    if (cleaned.indexOf('+') > 0) {
+                        cleaned = cleaned.replace(/\+/g, '');
+                        if (!cleaned.startsWith('+')) {
+                            cleaned = '+' + cleaned;
+                        }
+                    }
+                    
+                    // Limit to reasonable length
+                    return cleaned.length > 25 ? cleaned.slice(0, 25) : cleaned;
+                }
+            });
         });
-    });
+
+        // Postal code input formatting
+        ['resPostalCode', 'regPostalCode', 'motherPostalCode', 'fatherPostalCode'].forEach(function (fieldId) {
+            setupInputValidation(fieldId, {
+                transform: formatPostalCode
+            });
+        });
+    }
+    
+    // Call setup for input formatters
+    setupInputFormatters();
 
     // Display confirmation message after form submission
     function showConfirmationMessage() {
