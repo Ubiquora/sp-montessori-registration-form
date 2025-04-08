@@ -18,9 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('pesel').value = generateRandomPesel();
         document.getElementById('grade').value = '3';
 
-        // Set a date of birth (6 years ago from current date)
+        // Set a date of birth (age-appropriate for school registration in 2025)
         const birthDate = new Date();
-                birthDate.setFullYear(birthDate.getFullYear() - 9);
+        // For 3rd grade (typically 9 years old)
+        birthDate.setFullYear(2025 - 9);
         document.getElementById('birthDate').value = birthDate.toISOString().split('T')[0];
 
         document.getElementById('birthPlace').value = 'Warszawa';
@@ -47,8 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('motherLastName').value = 'Kowalska';
         document.getElementById('motherPhone').value = '500100200';
         document.getElementById('motherEmail').value = 'anna.kowalska@example.com';
-        document.getElementById('motherIdSeries').value = 'ABC';
-        document.getElementById('motherIdNumber').value = '123456';
+        document.getElementById('motherId').value = 'ABC123456';
         document.getElementById('motherStreetWithNumber').value = 'Marszałkowska 1';
         document.getElementById('motherPostalCode').value = '00-950';
         document.getElementById('motherCity').value = 'Warszawa';
@@ -58,8 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('fatherLastName').value = 'Kowalski';
         document.getElementById('fatherPhone').value = '600200300';
         document.getElementById('fatherEmail').value = 'tomasz.kowalski@example.com';
-        document.getElementById('fatherIdSeries').value = 'DEF';
-        document.getElementById('fatherIdNumber').value = '654321';
+        document.getElementById('fatherId').value = 'DEF654321';
         document.getElementById('fatherStreetWithNumber').value = 'Marszałkowska 12';
         document.getElementById('fatherPostalCode').value = '00-950';
         document.getElementById('fatherCity').value = 'Warszawa';
@@ -490,19 +489,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Validate mother's information
-        validateField('motherFirstName', { required: true, requiredMessage: 'Proszę podać imię matki' });
-        validateField('motherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko matki' });
+        validateField('motherFirstName', { required: true, requiredMessage: 'Proszę podać imię mamy' });
+        validateField('motherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko mamy' });
         validateField('motherPhone', {
             required: true,
             pattern: /^[\d\s+\-()\[\]]{6,25}$/,
-            requiredMessage: 'Proszę podać numer telefonu matki',
+            requiredMessage: 'Proszę podać numer telefonu mamy',
             patternMessage: 'Proszę podać prawidłowy numer telefonu'
         });
         validateField('motherEmail', {
             required: true,
             pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            requiredMessage: 'Proszę podać adres e-mail matki',
-            patternMessage: 'Proszę podać prawidłowy adres e-mail matki'
+            requiredMessage: 'Proszę podać adres e-mail mamy',
+            patternMessage: 'Proszę podać prawidłowy adres e-mail mamy'
+        });
+        validateField('motherId', { 
+            required: true, 
+            requiredMessage: 'Proszę podać numer dokumentu tożsamości mamy'
         });
 
         // Validate mother's address if checkbox is not checked
@@ -522,19 +525,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Validate father's information
-        validateField('fatherFirstName', { required: true, requiredMessage: 'Proszę podać imię ojca' });
-        validateField('fatherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko ojca' });
+        validateField('fatherFirstName', { required: true, requiredMessage: 'Proszę podać imię taty' });
+        validateField('fatherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko taty' });
         validateField('fatherPhone', {
             required: true,
             pattern: /^[\d\s+\-()\[\]]{6,25}$/,
-            requiredMessage: 'Proszę podać numer telefonu ojca',
+            requiredMessage: 'Proszę podać numer telefonu taty',
             patternMessage: 'Proszę podać prawidłowy numer telefonu'
         });
         validateField('fatherEmail', {
             required: true,
             pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            requiredMessage: 'Proszę podać adres e-mail ojca',
-            patternMessage: 'Proszę podać prawidłowy adres e-mail ojca'
+            requiredMessage: 'Proszę podać adres e-mail taty',
+            patternMessage: 'Proszę podać prawidłowy adres e-mail taty'
+        });
+        validateField('fatherId', { 
+            required: true, 
+            requiredMessage: 'Proszę podać numer dokumentu tożsamości taty'
         });
 
         // Validate father's address if checkbox is not checked
@@ -542,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!fatherSameAddressCheckbox.checked) {
             validateField('fatherStreetWithNumber', {
                 required: true,
-                requiredMessage: 'Proszę podać ulicę wraz z numerem domu ojca'
+                requiredMessage: 'Proszę podać ulicę wraz z numerem domu taty'
             });
             validateField('fatherPostalCode', {
                 required: true,
@@ -596,38 +603,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 inputValue = inputValue.slice(0, 25);
             }
             
-            // Update the input value
-            e.target.value = inputValue;
-        });
-    });
-
-    // Format ID series inputs to uppercase letters only
-    ['motherIdSeries', 'fatherIdSeries'].forEach(function (fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function (e) {
-            // Remove any non-letter characters and convert to uppercase
-            let inputValue = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase();
-
-            // Limit to 3 characters
-            if (inputValue.length > 3) {
-                inputValue = inputValue.slice(0, 3);
-            }
-
-            // Update the input value
-            e.target.value = inputValue;
-        });
-    });
-
-    // Format ID number inputs to digits only
-    ['motherIdNumber', 'fatherIdNumber'].forEach(function (fieldId) {
-        document.getElementById(fieldId).addEventListener('input', function (e) {
-            // Remove any non-digit characters
-            let inputValue = e.target.value.replace(/[^0-9]/g, '');
-
-            // Limit to 6 characters
-            if (inputValue.length > 6) {
-                inputValue = inputValue.slice(0, 6);
-            }
-
             // Update the input value
             e.target.value = inputValue;
         });
