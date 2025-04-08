@@ -174,31 +174,38 @@
 
                             <fieldset class="mb-4">
                                 <legend class="form-label fw-bold">Dane rodzica - mama</legend>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="motherFirstName" class="form-label">Imię</label>
-                                        <input type="text" class="form-control" id="motherFirstName" name="motherFirstName">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="motherLastName" class="form-label">Nazwisko</label>
-                                        <input type="text" class="form-control" id="motherLastName" name="motherLastName">
-                                    </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="noMother" name="noMother">
+                                    <label class="form-check-label" for="noMother">Nie podaję danych mamy (np. samotne rodzicielstwo, brak praw rodzicielskich)</label>
+                                    <span class="form-text d-none ms-1" id="noMotherDisabledHint">(Pole nieaktywne, ponieważ potrzebujemy dane co najmniej jednego rodzica)</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="motherPhone" class="form-label">Numer telefonu</label>
-                                        <input type="tel" class="form-control" id="motherPhone" name="motherPhone" placeholder="np. 123456789">
+                                <div id="motherDataSection">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="motherFirstName" class="form-label">Imię</label>
+                                            <input type="text" class="form-control" id="motherFirstName" name="motherFirstName">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="motherLastName" class="form-label">Nazwisko</label>
+                                            <input type="text" class="form-control" id="motherLastName" name="motherLastName">
+                                        </div>
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="motherEmail" class="form-label">Adres e-mail</label>
-                                        <input type="email" class="form-control" id="motherEmail" name="motherEmail">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="motherPhone" class="form-label">Numer telefonu</label>
+                                            <input type="tel" class="form-control" id="motherPhone" name="motherPhone" placeholder="np. 123456789">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="motherEmail" class="form-label">Adres e-mail</label>
+                                            <input type="email" class="form-control" id="motherEmail" name="motherEmail">
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="motherId" class="form-label">Numer dokumentu tożsamości</label>
-                                        <input type="text" class="form-control" id="motherId" name="motherId" placeholder="np. ABC123456 lub EQW8901424">
-                                        <div class="form-text">Numer dowodu osobistego lub innego dokumentu tożsamości</div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="motherId" class="form-label">Numer dokumentu tożsamości</label>
+                                            <input type="text" class="form-control" id="motherId" name="motherId" placeholder="np. ABC123456 lub EQW8901424">
+                                            <div class="form-text">Numer dowodu osobistego lub innego dokumentu tożsamości</div>
+                                        </div>
                                     </div>
                                 </div>
                             </fieldset>
@@ -229,31 +236,38 @@
                             
                             <fieldset class="mb-4">
                                 <legend class="form-label fw-bold">Dane rodzica - tata</legend>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="fatherFirstName" class="form-label">Imię</label>
-                                        <input type="text" class="form-control" id="fatherFirstName" name="fatherFirstName">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="fatherLastName" class="form-label">Nazwisko</label>
-                                        <input type="text" class="form-control" id="fatherLastName" name="fatherLastName">
-                                    </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="noFather" name="noFather">
+                                    <label class="form-check-label" for="noFather">Nie podaję danych taty (np. samotne rodzicielstwo, brak praw rodzicielskich)</label>
+                                    <span class="form-text d-none ms-1" id="noFatherDisabledHint">(Pole nieaktywne, ponieważ potrzebujemy dane co najmniej jednego rodzica)</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="fatherPhone" class="form-label">Numer telefonu</label>
-                                        <input type="tel" class="form-control" id="fatherPhone" name="fatherPhone" placeholder="np. 123456789">
+                                <div id="fatherDataSection">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="fatherFirstName" class="form-label">Imię</label>
+                                            <input type="text" class="form-control" id="fatherFirstName" name="fatherFirstName">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="fatherLastName" class="form-label">Nazwisko</label>
+                                            <input type="text" class="form-control" id="fatherLastName" name="fatherLastName">
+                                        </div>
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="fatherEmail" class="form-label">Adres e-mail</label>
-                                        <input type="email" class="form-control" id="fatherEmail" name="fatherEmail">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="fatherPhone" class="form-label">Numer telefonu</label>
+                                            <input type="tel" class="form-control" id="fatherPhone" name="fatherPhone" placeholder="np. 123456789">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="fatherEmail" class="form-label">Adres e-mail</label>
+                                            <input type="email" class="form-control" id="fatherEmail" name="fatherEmail">
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="fatherId" class="form-label">Numer dokumentu tożsamości</label>
-                                        <input type="text" class="form-control" id="fatherId" name="fatherId" placeholder="np. ABC123456 lub EQW8901424">
-                                        <div class="form-text">Numer dowodu osobistego lub innego dokumentu tożsamości</div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="fatherId" class="form-label">Numer dokumentu tożsamości</label>
+                                            <input type="text" class="form-control" id="fatherId" name="fatherId" placeholder="np. ABC123456 lub EQW8901424">
+                                            <div class="form-text">Numer dowodu osobistego lub innego dokumentu tożsamości</div>
+                                        </div>
                                     </div>
                                 </div>
                             </fieldset>
