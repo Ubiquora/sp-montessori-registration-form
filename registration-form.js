@@ -1,6 +1,24 @@
 document.addEventListener('DOMContentLoaded', function () {
     const registrationForm = document.getElementById('registrationForm');
 
+    // Set up event handler for the noCurrentSchool checkbox
+    const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
+    const currentSchoolSection = document.getElementById('currentSchoolSection');
+    
+    if (noCurrentSchoolCheckbox && currentSchoolSection) {
+        noCurrentSchoolCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Hide the current school fields and clear their values
+                currentSchoolSection.style.display = 'none';
+                document.getElementById('currentSchoolName').value = '';
+                document.getElementById('currentSchoolAddress').value = '';
+            } else {
+                // Show the current school fields
+                currentSchoolSection.style.display = 'block';
+            }
+        });
+    }
+
     // Function to generate a random 11-digit PESEL number
     function generateRandomPesel() {
         let pesel = '';
@@ -465,14 +483,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Validate school information
-        validateField('currentSchoolName', {
-            required: true,
-            requiredMessage: 'Proszę podać nazwę obecnej szkoły ucznia'
-        });
-        validateField('currentSchoolAddress', {
-            required: true,
-            requiredMessage: 'Proszę podać adres obecnej szkoły ucznia'
-        });
+        const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
+        
+        // Only validate current school fields if the "no current school" checkbox is NOT checked
+        if (!noCurrentSchoolCheckbox.checked) {
+            validateField('currentSchoolName', {
+                required: true,
+                requiredMessage: 'Proszę podać nazwę obecnej szkoły ucznia'
+            });
+            validateField('currentSchoolAddress', {
+                required: true,
+                requiredMessage: 'Proszę podać adres obecnej szkoły ucznia'
+            });
+        }
+        
         validateField('districtSchoolName', {
             required: true,
             requiredMessage: 'Proszę podać nazwę szkoły rejonowej'

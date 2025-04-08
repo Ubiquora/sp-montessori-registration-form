@@ -126,16 +126,22 @@
 
                             <fieldset class="mb-4">
                                 <legend class="form-label fw-bold">Szkoła do której uczeń obecnie uczęszcza</legend>
-                                <div class="row">
-                                    <div class="col-md-12 mb-3">
-                                        <label for="currentSchoolName" class="form-label">Nazwa i numer szkoły</label>
-                                        <input type="text" class="form-control" id="currentSchoolName" name="currentSchoolName" placeholder="np. Szkoła Podstawowa nr 123 im. Jana Kowalskiego">
-                                    </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="noCurrentSchool" name="noCurrentSchool">
+                                    <label class="form-check-label" for="noCurrentSchool">Dziecko nie uczęszcza obecnie do żadnej szkoły</label>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-12 mb-3">
-                                        <label for="currentSchoolAddress" class="form-label">Adres szkoły</label>
-                                        <input type="text" class="form-control" id="currentSchoolAddress" name="currentSchoolAddress" placeholder="np. ul. Przykładowa 1, 00-000 Warszawa">
+                                <div id="currentSchoolSection">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="currentSchoolName" class="form-label">Nazwa i numer szkoły</label>
+                                            <input type="text" class="form-control" id="currentSchoolName" name="currentSchoolName" placeholder="np. Szkoła Podstawowa nr 123 im. Jana Kowalskiego">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="currentSchoolAddress" class="form-label">Adres szkoły</label>
+                                            <input type="text" class="form-control" id="currentSchoolAddress" name="currentSchoolAddress" placeholder="np. ul. Przykładowa 1, 00-000 Warszawa">
+                                        </div>
                                     </div>
                                 </div>
                             </fieldset>
