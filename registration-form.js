@@ -276,6 +276,31 @@ document.addEventListener('DOMContentLoaded', function () {
             const formattedDate = birthDateInput.value.split('-').reverse().join('.');
             formData.set('birthDate', formattedDate);
         }
+        
+        // Format phone numbers to standardized format (remove spaces, dashes, brackets)
+        ['motherPhone', 'fatherPhone'].forEach(fieldId => {
+            const phoneInput = document.getElementById(fieldId);
+            if (phoneInput && phoneInput.value) {
+                // Keep plus sign for international numbers, remove all other non-digit characters
+                let formattedNumber = phoneInput.value;
+                const startsWithPlus = formattedNumber.startsWith('+');
+                
+                // For Google Sheets, prepend with a single quote (') if it has a plus sign
+                // This forces Google Sheets to treat it as text and not a formula
+                if (startsWithPlus) {
+                    // Remove non-digits except the plus sign
+                    formattedNumber = '+' + formattedNumber.substring(1).replace(/[^\d]/g, '');
+                    // Add single quote at the beginning to prevent Google Sheets formula interpretation
+                    formattedNumber = "'" + formattedNumber;
+                } else {
+                    // Not international format, just remove formatting characters
+                    formattedNumber = formattedNumber.replace(/[^\d]/g, '');
+                }
+                
+                // Update the value in the form data
+                formData.set(fieldId, formattedNumber);
+            }
+        });
 
         // Re-disable the fields that were previously disabled
         disabledFields.forEach(field => {
@@ -469,9 +494,9 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('motherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko matki' });
         validateField('motherPhone', {
             required: true,
-            pattern: /^\d{9}$/,
+            pattern: /^[\d\s+\-()\[\]]{6,25}$/,
             requiredMessage: 'Proszę podać numer telefonu matki',
-            patternMessage: 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji'
+            patternMessage: 'Proszę podać prawidłowy numer telefonu'
         });
         validateField('motherEmail', {
             required: true,
@@ -501,9 +526,9 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('fatherLastName', { required: true, requiredMessage: 'Proszę podać nazwisko ojca' });
         validateField('fatherPhone', {
             required: true,
-            pattern: /^\d{9}$/,
+            pattern: /^[\d\s+\-()\[\]]{6,25}$/,
             requiredMessage: 'Proszę podać numer telefonu ojca',
-            patternMessage: 'Numer telefonu powinien składać się z 9 cyfr bez myślników i spacji'
+            patternMessage: 'Proszę podać prawidłowy numer telefonu'
         });
         validateField('fatherEmail', {
             required: true,
@@ -550,17 +575,27 @@ document.addEventListener('DOMContentLoaded', function () {
         return isValid;
     }
 
-    // Restrict input to digits only for phone number fields
+    // Restrict input for phone number fields but allow flexible formats
     ['motherPhone', 'fatherPhone'].forEach(function (fieldId) {
         document.getElementById(fieldId).addEventListener('input', function (e) {
-            // Remove any non-digit characters
-            let inputValue = e.target.value.replace(/[^0-9]/g, '');
-
-            // Limit to 9 digits
-            if (inputValue.length > 9) {
-                inputValue = inputValue.slice(0, 9);
+            // Allow digits, plus sign, spaces, dashes, and brackets for readability and international formats
+            let inputValue = e.target.value.replace(/[^\d\s+\-()]/g, '');
+            
+            // Ensure plus sign is only at the beginning if present
+            if (inputValue.indexOf('+') > 0) {
+                // Remove additional plus signs
+                inputValue = inputValue.replace(/\+/g, '');
+                // Add plus sign at the beginning if not already there
+                if (!inputValue.startsWith('+')) {
+                    inputValue = '+' + inputValue;
+                }
             }
-
+            
+            // Limit to reasonable length for international numbers with formatting
+            if (inputValue.length > 25) {
+                inputValue = inputValue.slice(0, 25);
+            }
+            
             // Update the input value
             e.target.value = inputValue;
         });
