@@ -270,6 +270,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // If form is valid, collect the data
         const formData = new FormData(registrationForm);
+        
+        // Format the birth date value to DD.MM.YYYY before submission
+        const birthDateInput = document.getElementById('birthDate');
+        if (birthDateInput && birthDateInput.value) {
+            // Get the ISO formatted date (YYYY-MM-DD)
+            const isoDate = birthDateInput.value;
+            
+            // Parse the date components
+            const [year, month, day] = isoDate.split('-');
+            
+            // Create formatted date (DD.MM.YYYY)
+            const formattedDate = `${day}.${month}.${year}`;
+            
+            // Replace the value in formData
+            formData.set('birthDate', formattedDate);
+        }
 
         // Re-disable the fields that were previously disabled
         disabledFields.forEach(field => {
