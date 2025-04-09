@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Call the function to prepopulate form with dummy data
-    prepopulateFormWithDummyData();
+    // prepopulateFormWithDummyData();
 
     /**
      * Generic function to setup input validation and formatting
