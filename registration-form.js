@@ -419,6 +419,45 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Add district school visibility based on grade selection
+    const gradeSelect = document.getElementById('grade');
+    const districtSchoolSection = document.getElementById('districtSchoolSection');
+    
+    // Function to toggle district school section visibility based on grade
+    function toggleDistrictSchoolVisibility() {
+        const selectedGrade = parseInt(gradeSelect.value);
+        
+        // Only show district school fields for grade 0 (zerówka) or grade 1
+        if (selectedGrade <= 1) {
+            districtSchoolSection.style.display = 'block';
+        } else {
+            districtSchoolSection.style.display = 'none';
+            
+            // Clear district school fields when hidden
+            document.getElementById('districtSchoolName').value = '';
+            document.getElementById('districtSchoolAddress').value = '';
+            document.getElementById('districtSchoolEmail').value = '';
+            
+            // Remove any validation errors
+            ['districtSchoolName', 'districtSchoolAddress', 'districtSchoolEmail'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.classList.remove('is-invalid', 'is-valid');
+                
+                // Remove feedback elements
+                const feedback = field.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.remove();
+                }
+            });
+        }
+    }
+    
+    // Set initial visibility when page loads
+    toggleDistrictSchoolVisibility();
+    
+    // Update visibility when grade changes
+    gradeSelect.addEventListener('change', toggleDistrictSchoolVisibility);
+
     // Form validation and submission
     registrationForm.addEventListener('submit', function (event) {
         // Prevent default submission
@@ -641,9 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
             });
             validateField('regCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
-        }
-
-        // Validate school information
+        }        // Validate school information
         const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
         
         // Only validate current school fields if the "no current school" checkbox is NOT checked
@@ -658,20 +695,24 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
         
-        validateField('districtSchoolName', {
-            required: true,
-            requiredMessage: 'Proszę podać nazwę szkoły rejonowej'
-        });
-        validateField('districtSchoolAddress', {
-            required: true,
-            requiredMessage: 'Proszę podać adres szkoły rejonowej'
-        });
-        validateField('districtSchoolEmail', {
-            required: true,
-            pattern: PATTERNS.EMAIL,
-            requiredMessage: 'Proszę podać adres e-mail szkoły rejonowej',
-            patternMessage: 'Proszę podać prawidłowy adres e-mail szkoły rejonowej'
-        });
+        // Only validate district school fields for grades 0 and 1
+        const selectedGrade = parseInt(document.getElementById('grade').value);
+        if (selectedGrade <= 1) {
+            validateField('districtSchoolName', {
+                required: true,
+                requiredMessage: 'Proszę podać nazwę szkoły rejonowej'
+            });
+            validateField('districtSchoolAddress', {
+                required: true,
+                requiredMessage: 'Proszę podać adres szkoły rejonowej'
+            });
+            validateField('districtSchoolEmail', {
+                required: true,
+                pattern: PATTERNS.EMAIL,
+                requiredMessage: 'Proszę podać adres e-mail szkoły rejonowej',
+                patternMessage: 'Proszę podać prawidłowy adres e-mail szkoły rejonowej'
+            });
+        }
 
         // Validate parent information using centralized validation
         validateParentInfo('mother', noMotherCheckbox);
