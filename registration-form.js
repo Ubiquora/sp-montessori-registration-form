@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('resStreetWithNumber').value = 'Marszałkowska 123/45';
         document.getElementById('resPostalCode').value = '00-950';
         document.getElementById('resCity').value = 'Warszawa';
+        document.getElementById('resVoivodeship').value = 'Mazowieckie';
+        document.getElementById('resCounty').value = 'Warszawa';
+        document.getElementById('resCommune').value = 'Warszawa';
 
         // Registered address
         document.getElementById('regStreetWithNumber').value = 'Marszałkowska 123/45';
@@ -211,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Call the function to prepopulate form with dummy data
-    // prepopulateFormWithDummyData();
+    prepopulateFormWithDummyData();
 
     /**
      * Generic function to setup input validation and formatting
@@ -611,9 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('firstName', { required: true, requiredMessage: 'Proszę podać imię ucznia' });
         validateField('lastName', { required: true, requiredMessage: 'Proszę podać nazwisko ucznia' });
         validateField('birthDate', { required: true, requiredMessage: 'Proszę podać datę urodzenia' });
-        validateField('birthPlace', { required: true, requiredMessage: 'Proszę podać miejsce urodzenia' });
-
-        // Validate address fields
+        validateField('birthPlace', { required: true, requiredMessage: 'Proszę podać miejsce urodzenia' });        // Validate address fields
         validateField('resStreetWithNumber', { required: true, requiredMessage: 'Proszę podać ulicę wraz z numerem domu' });
         validateField('resPostalCode', {
             required: true,
@@ -622,6 +623,9 @@ document.addEventListener('DOMContentLoaded', function () {
             patternMessage: 'Kod pocztowy powinien być w formacie XX-XXX (np. 00-000)'
         });
         validateField('resCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
+        validateField('resVoivodeship', { required: true, requiredMessage: 'Proszę podać województwo' });
+        validateField('resCounty', { required: true, requiredMessage: 'Proszę podać powiat' });
+        validateField('resCommune', { required: true, requiredMessage: 'Proszę podać gminę' });
 
         // Validate registered address fields if "same address" is not checked
         const sameAddressCheckbox = document.getElementById('sameAddress');
