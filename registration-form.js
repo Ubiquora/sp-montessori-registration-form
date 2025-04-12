@@ -1,5 +1,78 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const registrationForm = document.getElementById('registrationForm');
+    // Cache DOM elements for better performance
+    const DOM = {
+        // Form element
+        form: document.getElementById('registrationForm'),
+        
+        // Student information fields
+        firstName: document.getElementById('firstName'),
+        lastName: document.getElementById('lastName'),
+        pesel: document.getElementById('pesel'),
+        grade: document.getElementById('grade'),
+        birthDate: document.getElementById('birthDate'),
+        birthPlace: document.getElementById('birthPlace'),
+        
+        // Residence address fields
+        resStreetWithNumber: document.getElementById('resStreetWithNumber'),
+        resPostalCode: document.getElementById('resPostalCode'),
+        resCity: document.getElementById('resCity'),
+        resVoivodeship: document.getElementById('resVoivodeship'),
+        resCounty: document.getElementById('resCounty'),
+        resCommune: document.getElementById('resCommune'),
+        
+        // Registered address fields
+        sameAddress: document.getElementById('sameAddress'),
+        registeredAddressSection: document.getElementById('registeredAddressSection'),
+        regStreetWithNumber: document.getElementById('regStreetWithNumber'),
+        regPostalCode: document.getElementById('regPostalCode'),
+        regCity: document.getElementById('regCity'),
+        
+        // School information fields
+        noCurrentSchool: document.getElementById('noCurrentSchool'),
+        currentSchoolSection: document.getElementById('currentSchoolSection'),
+        currentSchoolName: document.getElementById('currentSchoolName'),
+        currentSchoolAddress: document.getElementById('currentSchoolAddress'),
+        districtSchoolSection: document.getElementById('districtSchoolSection'),
+        districtSchoolName: document.getElementById('districtSchoolName'),
+        districtSchoolAddress: document.getElementById('districtSchoolAddress'),
+        districtSchoolEmail: document.getElementById('districtSchoolEmail'),
+        
+        // Mother data fields
+        noMother: document.getElementById('noMother'),
+        motherDataSection: document.getElementById('motherDataSection'),
+        motherAddressSection: document.getElementById('motherAddressSection'),
+        motherSameAddress: document.getElementById('motherSameAddress'),
+        motherFirstName: document.getElementById('motherFirstName'),
+        motherLastName: document.getElementById('motherLastName'),
+        motherPhone: document.getElementById('motherPhone'),
+        motherEmail: document.getElementById('motherEmail'),
+        motherId: document.getElementById('motherId'),
+        motherStreetWithNumber: document.getElementById('motherStreetWithNumber'),
+        motherPostalCode: document.getElementById('motherPostalCode'),
+        motherCity: document.getElementById('motherCity'),
+        noMotherDisabledHint: document.getElementById('noMotherDisabledHint'),
+        
+        // Father data fields
+        noFather: document.getElementById('noFather'),
+        fatherDataSection: document.getElementById('fatherDataSection'),
+        fatherAddressSection: document.getElementById('fatherAddressSection'),
+        fatherSameAddress: document.getElementById('fatherSameAddress'),
+        fatherFirstName: document.getElementById('fatherFirstName'),
+        fatherLastName: document.getElementById('fatherLastName'),
+        fatherPhone: document.getElementById('fatherPhone'),
+        fatherEmail: document.getElementById('fatherEmail'),
+        fatherId: document.getElementById('fatherId'),
+        fatherStreetWithNumber: document.getElementById('fatherStreetWithNumber'),
+        fatherPostalCode: document.getElementById('fatherPostalCode'),
+        fatherCity: document.getElementById('fatherCity'),
+        noFatherDisabledHint: document.getElementById('noFatherDisabledHint'),
+        
+        // Consents
+        agreement: document.getElementById('agreement'),
+        dataProcessingConsent: document.getElementById('dataProcessingConsent'),
+    };
+    
+    const registrationForm = DOM.form;
 
     /**
      * General-purpose function to toggle section visibility based on checkbox state
@@ -38,8 +111,8 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     
     // Set up event handler for the noCurrentSchool checkbox
-    const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
-    const currentSchoolSection = document.getElementById('currentSchoolSection');
+    const noCurrentSchoolCheckbox = DOM.noCurrentSchool;
+    const currentSchoolSection = DOM.currentSchoolSection;
     
     setupCheckboxToggle(
         noCurrentSchoolCheckbox, 
@@ -47,21 +120,21 @@ document.addEventListener('DOMContentLoaded', function () {
         // On check callback - clear fields
         function() {
             ['currentSchoolName', 'currentSchoolAddress'].forEach(id => {
-                const field = document.getElementById(id);
+                const field = DOM[id];
                 if (field) field.value = '';
             });
         }
     );
 
     // Set up event handler for the parent availability checkboxes
-    const noMotherCheckbox = document.getElementById('noMother');
-    const noFatherCheckbox = document.getElementById('noFather');
-    const motherDataSection = document.getElementById('motherDataSection');
-    const fatherDataSection = document.getElementById('fatherDataSection');
-    const motherAddressSection = document.getElementById('motherAddressSection');
-    const fatherAddressSection = document.getElementById('fatherAddressSection');
-    const noMotherDisabledHint = document.getElementById('noMotherDisabledHint');
-    const noFatherDisabledHint = document.getElementById('noFatherDisabledHint');
+    const noMotherCheckbox = DOM.noMother;
+    const noFatherCheckbox = DOM.noFather;
+    const motherDataSection = DOM.motherDataSection;
+    const fatherDataSection = DOM.fatherDataSection;
+    const motherAddressSection = DOM.motherAddressSection;
+    const fatherAddressSection = DOM.fatherAddressSection;
+    const noMotherDisabledHint = DOM.noMotherDisabledHint;
+    const noFatherDisabledHint = DOM.noFatherDisabledHint;
     
     // Setup parent checkbox toggle functionality
     function setupParentCheckbox(checkbox, dataSections, clearPrefix, otherCheckbox, otherHint) {
@@ -121,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         fieldPrefixes.forEach(prefix => {
             const fieldId = parentType + prefix;
-            const field = document.getElementById(fieldId);
+            const field = DOM[fieldId];
             if (field) {
                 field.value = '';
                 field.disabled = false; // Ensure fields are not disabled
@@ -131,14 +204,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         
         // Uncheck the same address checkbox if it exists
-        const sameAddressCheckbox = document.getElementById(parentType + 'SameAddress');
+        const sameAddressCheckbox = DOM[parentType + 'SameAddress'];
         if (sameAddressCheckbox) {
             sameAddressCheckbox.checked = false;
         }
         
         // Remove auto-filled styling from parent address section
-        const addressSectionId = parentType + 'AddressSection';
-        const addressSection = document.getElementById(addressSectionId);
+        const addressSection = DOM[parentType + 'AddressSection'];
         if (addressSection) {
             addressSection.classList.remove('auto-filled');
         }
@@ -156,61 +228,61 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add a function to prepopulate form fields with dummy data
     function prepopulateFormWithDummyData() {
         // Student data
-        document.getElementById('firstName').value = 'Jan Maria';
-        document.getElementById('lastName').value = 'Kowalski';
-        document.getElementById('pesel').value = generateRandomPesel();
-        document.getElementById('grade').value = '3';
+        DOM.firstName.value = 'Jan Maria';
+        DOM.lastName.value = 'Kowalski';
+        DOM.pesel.value = generateRandomPesel();
+        DOM.grade.value = '3';
 
         // Set a date of birth (age-appropriate for school registration in 2025)
         const birthDate = new Date();
         // For 3rd grade (typically 9 years old)
         birthDate.setFullYear(2025 - 9);
-        document.getElementById('birthDate').value = birthDate.toISOString().split('T')[0];
+        DOM.birthDate.value = birthDate.toISOString().split('T')[0];
 
-        document.getElementById('birthPlace').value = 'Warszawa';
+        DOM.birthPlace.value = 'Warszawa';
 
         // Residence address
-        document.getElementById('resStreetWithNumber').value = 'Marszałkowska 123/45';
-        document.getElementById('resPostalCode').value = '00-950';
-        document.getElementById('resCity').value = 'Warszawa';
-        document.getElementById('resVoivodeship').value = 'Mazowieckie';
-        document.getElementById('resCounty').value = 'Warszawa';
-        document.getElementById('resCommune').value = 'Warszawa';
+        DOM.resStreetWithNumber.value = 'Marszałkowska 123/45';
+        DOM.resPostalCode.value = '00-950';
+        DOM.resCity.value = 'Warszawa';
+        DOM.resVoivodeship.value = 'Mazowieckie';
+        DOM.resCounty.value = 'Warszawa';
+        DOM.resCommune.value = 'Warszawa';
 
         // Registered address
-        document.getElementById('regStreetWithNumber').value = 'Marszałkowska 123/45';
-        document.getElementById('regPostalCode').value = '00-950';
-        document.getElementById('regCity').value = 'Warszawa';
+        DOM.regStreetWithNumber.value = 'Marszałkowska 123/45';
+        DOM.regPostalCode.value = '00-950';
+        DOM.regCity.value = 'Warszawa';
 
         // Schools
-        document.getElementById('currentSchoolName').value = 'Szkoła Podstawowa nr 123 im. Jana Kowalskiego';
-        document.getElementById('currentSchoolAddress').value = 'ul. Szkolna 10, 00-950 Warszawa';
-        document.getElementById('districtSchoolName').value = 'Szkoła Podstawowa nr 456 im. Marii Nowak';
-        document.getElementById('districtSchoolAddress').value = 'ul. Rejonowa 20, 00-950 Warszawa';
-        document.getElementById('districtSchoolEmail').value = 'sekretariat@sp456.edu.pl';
+        DOM.currentSchoolName.value = 'Szkoła Podstawowa nr 123 im. Jana Kowalskiego';
+        DOM.currentSchoolAddress.value = 'ul. Szkolna 10, 00-950 Warszawa';
+        DOM.districtSchoolName.value = 'Szkoła Podstawowa nr 456 im. Marii Nowak';
+        DOM.districtSchoolAddress.value = 'ul. Rejonowa 20, 00-950 Warszawa';
+        DOM.districtSchoolEmail.value = 'sekretariat@sp456.edu.pl';
 
         // Mother data
-        document.getElementById('motherFirstName').value = 'Anna';
-        document.getElementById('motherLastName').value = 'Kowalska';
-        document.getElementById('motherPhone').value = '500100200';
-        document.getElementById('motherEmail').value = 'anna.kowalska@example.com';
-        document.getElementById('motherId').value = 'ABC123456';
-        document.getElementById('motherStreetWithNumber').value = 'Marszałkowska 1';
-        document.getElementById('motherPostalCode').value = '00-950';
-        document.getElementById('motherCity').value = 'Warszawa';
+        DOM.motherFirstName.value = 'Anna';
+        DOM.motherLastName.value = 'Kowalska';
+        DOM.motherPhone.value = '500100200';
+        DOM.motherEmail.value = 'anna.kowalska@example.com';
+        DOM.motherId.value = 'ABC123456';
+        DOM.motherStreetWithNumber.value = 'Marszałkowska 1';
+        DOM.motherPostalCode.value = '00-950';
+        DOM.motherCity.value = 'Warszawa';
 
         // Father data
-        document.getElementById('fatherFirstName').value = 'Tomasz';
-        document.getElementById('fatherLastName').value = 'Kowalski';
-        document.getElementById('fatherPhone').value = '600200300';
-        document.getElementById('fatherEmail').value = 'tomasz.kowalski@example.com';
-        document.getElementById('fatherId').value = 'DEF654321';
-        document.getElementById('fatherStreetWithNumber').value = 'Marszałkowska 12';
-        document.getElementById('fatherPostalCode').value = '00-950';
-        document.getElementById('fatherCity').value = 'Warszawa';
+        DOM.fatherFirstName.value = 'Tomasz';
+        DOM.fatherLastName.value = 'Kowalski';
+        DOM.fatherPhone.value = '600200300';
+        DOM.fatherEmail.value = 'tomasz.kowalski@example.com';
+        DOM.fatherId.value = 'DEF654321';
+        DOM.fatherStreetWithNumber.value = 'Marszałkowska 12';
+        DOM.fatherPostalCode.value = '00-950';
+        DOM.fatherCity.value = 'Warszawa';
 
         // Check the agreement checkbox
-        document.getElementById('agreement').checked = true;
+        DOM.agreement.checked = true;
     }
 
     // Call the function to prepopulate form with dummy data
@@ -222,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {Object} options - Configuration options
      */
     function setupInputValidation(fieldId, options) {
-        const field = document.getElementById(fieldId);
+        const field = DOM[fieldId];
         if (!field) return;
 
         field.addEventListener('input', function(e) {
@@ -304,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         // Optional: Check if birth date matches the form's birthDate input
-        const birthDateInput = document.getElementById('birthDate');
+        const birthDateInput = DOM.birthDate;
         if (birthDateInput && birthDateInput.value) {
             const formBirthDate = new Date(birthDateInput.value);
             
@@ -327,9 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
             birthDate: birthDate,
             gender: parseInt(pesel.charAt(9), 10) % 2 === 0 ? 'K' : 'M' // Female if even, Male if odd
         };
-    }
-
-    // Set up enhanced validation for PESEL field
+    }    // Set up enhanced validation for PESEL field
     setupInputValidation('pesel', {
         transform: function(value) {
             // Replace any non-digit characters and limit to 11 characters
@@ -370,10 +440,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 field.classList.add('is-valid');
                 
                 // Optional: Auto-fill birth date if it's empty and we have a valid PESEL
-                const birthDateInput = document.getElementById('birthDate');
-                if (birthDateInput && !birthDateInput.value && validationResult.birthDate) {
+                if (DOM.birthDate && !DOM.birthDate.value && validationResult.birthDate) {
                     const formattedDate = validationResult.birthDate.toISOString().split('T')[0];
-                    birthDateInput.value = formattedDate;
+                    DOM.birthDate.value = formattedDate;
                 }
             }
         }
@@ -417,8 +486,8 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {Object} fieldMap - Mapping of source field IDs to target field IDs
      */
     function setupAddressCopyFeature(checkboxId, targetSectionId, fieldMap) {
-        const checkbox = document.getElementById(checkboxId);
-        const targetSection = document.getElementById(targetSectionId);
+        const checkbox = DOM[checkboxId];
+        const targetSection = DOM[targetSectionId];
 
         if (!checkbox || !targetSection) return;
 
@@ -428,8 +497,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // For each field in the mapping
             Object.entries(fieldMap).forEach(([sourceId, targetId]) => {
-                const sourceElement = document.getElementById(sourceId);
-                const targetElement = document.getElementById(targetId);
+                const sourceElement = DOM[sourceId];
+                const targetElement = DOM[targetId];
 
                 if (sourceElement && targetElement) {
                     // Copy and format value if checkbox is checked
@@ -461,10 +530,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Set up source field input listeners to update target fields when changed
         const sourceFields = Object.keys(fieldMap);
         sourceFields.forEach(sourceId => {
-            document.getElementById(sourceId)?.addEventListener('input', function () {
+            DOM[sourceId]?.addEventListener('input', function () {
                 if (checkbox.checked) {
                     const targetId = fieldMap[sourceId];
-                    const targetElement = document.getElementById(targetId);
+                    const targetElement = DOM[targetId];
 
                     if (targetElement) {
                         // Special handling for postal code
@@ -508,11 +577,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Helper function to reset address sections after form submission or when needed
     function resetAddressSection(checkboxId, sectionId, fieldIds) {
-        document.getElementById(checkboxId).checked = false;
-        document.getElementById(sectionId).classList.remove('auto-filled');
+        DOM[checkboxId].checked = false;
+        DOM[sectionId].classList.remove('auto-filled');
 
         fieldIds.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
+            const field = DOM[fieldId];
             if (field) {
                 field.disabled = false;
             }
@@ -520,8 +589,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Add district school visibility based on grade selection
-    const gradeSelect = document.getElementById('grade');
-    const districtSchoolSection = document.getElementById('districtSchoolSection');
+    const gradeSelect = DOM.grade;
+    const districtSchoolSection = DOM.districtSchoolSection;
     
     // Function to toggle district school section visibility based on grade
     function toggleDistrictSchoolVisibility() {
@@ -534,13 +603,13 @@ document.addEventListener('DOMContentLoaded', function () {
             districtSchoolSection.style.display = 'none';
             
             // Clear district school fields when hidden
-            document.getElementById('districtSchoolName').value = '';
-            document.getElementById('districtSchoolAddress').value = '';
-            document.getElementById('districtSchoolEmail').value = '';
+            DOM.districtSchoolName.value = '';
+            DOM.districtSchoolAddress.value = '';
+            DOM.districtSchoolEmail.value = '';
             
             // Remove any validation errors
             ['districtSchoolName', 'districtSchoolAddress', 'districtSchoolEmail'].forEach(fieldId => {
-                const field = document.getElementById(fieldId);
+                const field = DOM[fieldId];
                 field.classList.remove('is-invalid', 'is-valid');
                 
                 // Remove feedback elements
@@ -578,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(registrationForm);
         
         // Format the birth date value to DD.MM.YYYY before submission
-        const birthDateInput = document.getElementById('birthDate');
+        const birthDateInput = DOM.birthDate;
         if (birthDateInput && birthDateInput.value) {
             // Convert YYYY-MM-DD to DD.MM.YYYY
             const formattedDate = birthDateInput.value.split('-').reverse().join('.');
@@ -660,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function formatPhoneNumbersForSubmission(formData) {
         ['motherPhone', 'fatherPhone'].forEach(fieldId => {
-            const phoneInput = document.getElementById(fieldId);
+            const phoneInput = DOM[fieldId];
             if (phoneInput && phoneInput.value) {
                 // Keep plus sign for international numbers, remove all other non-digit characters
                 let formattedNumber = phoneInput.value;
@@ -721,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Utility function for field validation with common patterns
         function validateField(id, options = {}) {
-            const field = document.getElementById(id);
+            const field = DOM[id];
             if (!field) return;
 
             const value = field.value.trim();
@@ -767,7 +836,7 @@ document.addEventListener('DOMContentLoaded', function () {
         validateField('resCommune', { required: true, requiredMessage: 'Proszę podać gminę' });
 
         // Validate registered address fields if "same address" is not checked
-        const sameAddressCheckbox = document.getElementById('sameAddress');
+        const sameAddressCheckbox = DOM.sameAddress;
         if (!sameAddressCheckbox.checked) {
             validateField('regStreetWithNumber', {
                 required: true,
@@ -781,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             validateField('regCity', { required: true, requiredMessage: 'Proszę podać miejscowość' });
         }        // Validate school information
-        const noCurrentSchoolCheckbox = document.getElementById('noCurrentSchool');
+        const noCurrentSchoolCheckbox = DOM.noCurrentSchool;
         
         // Only validate current school fields if the "no current school" checkbox is NOT checked
         if (!noCurrentSchoolCheckbox.checked) {
@@ -796,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         // Only validate district school fields for grades 0 and 1
-        const selectedGrade = parseInt(document.getElementById('grade').value);
+        const selectedGrade = parseInt(DOM.grade.value);
         if (selectedGrade <= 1) {
             validateField('districtSchoolName', {
                 required: true,
@@ -845,11 +914,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         // Validate electronic documents agreement
-        const agreement = document.getElementById('agreement');
+        const agreement = DOM.agreement;
         validateCheckbox(agreement, 'Musisz wyrazić zgodę na otrzymywanie dokumentów w formie elektronicznej');
         
         // Validate data processing consent (required)
-        const dataProcessingConsent = document.getElementById('dataProcessingConsent');
+        const dataProcessingConsent = DOM.dataProcessingConsent;
         validateCheckbox(dataProcessingConsent, 'Musisz wyrazić zgodę na przetwarzanie danych osobowych');
 
         return isValid;
@@ -888,7 +957,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 // Validate parent's address if "same address" checkbox is not checked
-                const sameAddressCheckbox = document.getElementById(parentType + 'SameAddress');
+                const sameAddressCheckbox = DOM[parentType + 'SameAddress'];
                 if (!sameAddressCheckbox.checked) {
                     validateField(parentType + 'StreetWithNumber', {
                         required: true,
