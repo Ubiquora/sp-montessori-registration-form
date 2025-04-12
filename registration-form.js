@@ -194,12 +194,10 @@ document.addEventListener('DOMContentLoaded', function () {
         
         fieldPrefixes.forEach(prefix => {
             const fieldId = parentType + prefix;
-            const field = DOM[fieldId];
-            if (field) {
+            const field = DOM[fieldId];            if (field) {
                 field.value = '';
                 field.disabled = false; // Ensure fields are not disabled
-                field.classList.remove('is-invalid');
-                field.classList.remove('is-valid');
+                field.classList.remove('is-invalid', 'is-valid');
             }
         });
         
@@ -859,11 +857,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Validate form fields
     function validateForm() {
-        let isValid = true;
-
-        // Clear previous validation indicators
-        document.querySelectorAll('.is-invalid').forEach(field => {
-            field.classList.remove('is-invalid');
+        let isValid = true;        // Clear previous validation indicators - using more efficient selectors
+        document.querySelectorAll('.is-invalid, .is-valid').forEach(field => {
+            field.classList.remove('is-invalid', 'is-valid');
         });
         document.querySelectorAll('.invalid-feedback').forEach(feedback => {
             feedback.remove();
