@@ -239,9 +239,97 @@ document.addEventListener('DOMContentLoaded', function () {
                 options.validate(e.target, inputValue);
             }
         });
+    }    /**
+     * Validates a PESEL number according to Polish national ID regulations
+     * @param {string} pesel - The PESEL number to validate
+     * @returns {Object} - Validation result with status and message
+     */
+    function validatePesel(pesel) {
+        // Check if it's exactly 11 digits
+        if (!pesel || !/^\d{11}$/.test(pesel)) {
+            return { 
+                isValid: false, 
+                message: 'PESEL musi składać się dokładnie z 11 cyfr' 
+            };
+        }
+        
+        // Extract date components from PESEL
+        const year = parseInt(pesel.substring(0, 2), 10);
+        let month = parseInt(pesel.substring(2, 4), 10);
+        const day = parseInt(pesel.substring(4, 6), 10);
+        
+        // Determine century based on month coding
+        let fullYear;
+        if (month > 80) {
+            fullYear = 1800 + year;
+            month -= 80;
+        } else if (month > 60) {
+            fullYear = 2200 + year;
+            month -= 60;
+        } else if (month > 40) {
+            fullYear = 2100 + year;
+            month -= 40;
+        } else if (month > 20) {
+            fullYear = 2000 + year;
+            month -= 20;
+        } else {
+            fullYear = 1900 + year;
+        }
+          // Check if the date is valid - using UTC to avoid timezone issues
+        const birthDate = new Date(Date.UTC(fullYear, month - 1, day));
+        if (
+            birthDate.getUTCFullYear() !== fullYear ||
+            birthDate.getUTCMonth() !== month - 1 ||
+            birthDate.getUTCDate() !== day
+        ) {
+            return {
+                isValid: false,
+                message: 'PESEL zawiera nieprawidłową datę urodzenia'
+            };
+        }
+        
+        // Verify check digit using the weighted sum algorithm
+        const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3, 1];
+        let sum = 0;
+        
+        for (let i = 0; i < 11; i++) {
+            sum += parseInt(pesel.charAt(i), 10) * weights[i];
+        }
+        
+        if (sum % 10 !== 0) {
+            return {
+                isValid: false,
+                message: 'Nieprawidłowa cyfra kontrolna PESEL'
+            };
+        }
+        
+        // Optional: Check if birth date matches the form's birthDate input
+        const birthDateInput = document.getElementById('birthDate');
+        if (birthDateInput && birthDateInput.value) {
+            const formBirthDate = new Date(birthDateInput.value);
+            
+            // Compare only year, month, and day
+            if (
+                formBirthDate.getFullYear() !== birthDate.getFullYear() ||
+                formBirthDate.getMonth() !== birthDate.getMonth() ||
+                formBirthDate.getDate() !== birthDate.getDate()
+            ) {
+                return {
+                    isValid: false,
+                    warning: true,
+                    message: 'Data urodzenia w PESEL nie zgadza się z podaną datą urodzenia'
+                };
+            }
+        }
+        
+        return { 
+            isValid: true,
+            birthDate: birthDate,
+            gender: parseInt(pesel.charAt(9), 10) % 2 === 0 ? 'K' : 'M' // Female if even, Male if odd
+        };
     }
 
-    // Restrict input to digits only for PESEL field, max 11 chars
+    // Set up enhanced validation for PESEL field
     setupInputValidation('pesel', {
         transform: function(value) {
             // Replace any non-digit characters and limit to 11 characters
@@ -249,32 +337,44 @@ document.addEventListener('DOMContentLoaded', function () {
             return cleaned.length > 11 ? cleaned.slice(0, 11) : cleaned;
         },
         validate: function(field, value) {
-            // Real-time validation feedback
+            // Remove existing feedback
             const peselFeedback = document.getElementById('pesel-feedback');
-
-            if (value && value.length !== 11) {
-                // If there's any input but it's not 11 digits, show error
-                if (!peselFeedback) {
-                    // Create feedback element if it doesn't exist
-                    const feedbackEl = document.createElement('div');
-                    feedbackEl.id = 'pesel-feedback';
-                    feedbackEl.className = 'invalid-feedback d-block';
-                    feedbackEl.textContent = 'PESEL musi składać się dokładnie z 11 cyfr';
-                    field.classList.add('is-invalid');
-                    field.parentNode.appendChild(feedbackEl);
-                }
-            } else if (value.length === 11) {
-                // Valid PESEL (11 digits)
-                field.classList.remove('is-invalid');
-                field.classList.add('is-valid');
-                if (peselFeedback) {
-                    peselFeedback.remove();
-                }
-            } else if (peselFeedback) {
-                // Remove feedback if input is empty
+            if (peselFeedback) {
                 peselFeedback.remove();
-                field.classList.remove('is-invalid');
-                field.classList.remove('is-valid');
+            }
+            
+            field.classList.remove('is-invalid', 'is-valid');
+            
+            // Skip validation if empty
+            if (!value) return;
+            
+            // Perform full PESEL validation
+            const validationResult = validatePesel(value);
+            
+            if (!validationResult.isValid) {
+                // Create feedback element
+                const feedbackEl = document.createElement('div');
+                feedbackEl.id = 'pesel-feedback';
+                feedbackEl.className = validationResult.warning ? 'text-warning d-block' : 'invalid-feedback d-block';
+                feedbackEl.textContent = validationResult.message;
+                
+                if (!validationResult.warning) {
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.add('is-valid'); // Still valid but with a warning
+                }
+                
+                field.parentNode.appendChild(feedbackEl);
+            } else {
+                // Valid PESEL
+                field.classList.add('is-valid');
+                
+                // Optional: Auto-fill birth date if it's empty and we have a valid PESEL
+                const birthDateInput = document.getElementById('birthDate');
+                if (birthDateInput && !birthDateInput.value && validationResult.birthDate) {
+                    const formattedDate = validationResult.birthDate.toISOString().split('T')[0];
+                    birthDateInput.value = formattedDate;
+                }
             }
         }
     });
