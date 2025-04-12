@@ -716,26 +716,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Validate parent information using centralized validation
         validateParentInfo('mother', noMotherCheckbox);
-        validateParentInfo('father', noFatherCheckbox);
+        validateParentInfo('father', noFatherCheckbox);        // Helper function to validate checkboxes
+        function validateCheckbox(checkbox, errorMessage) {
+            if (!checkbox.checked) {
+                // Special case for checkbox
+                checkbox.classList.add('is-invalid');
+                let checkboxContainer = checkbox.closest('.form-check');
+                let feedbackElement = checkboxContainer.querySelector('.invalid-feedback');
 
-        // Validate if agreement is checked
-        const agreement = document.getElementById('agreement');
-        if (!agreement.checked) {
-            // Special case for checkbox
-            agreement.classList.add('is-invalid');
-            let agreementContainer = agreement.closest('.form-check');
-            let feedbackElement = agreementContainer.querySelector('.invalid-feedback');
+                if (!feedbackElement) {
+                    feedbackElement = document.createElement('div');
+                    feedbackElement.className = 'invalid-feedback';
+                    checkboxContainer.appendChild(feedbackElement);
+                }
 
-            if (!feedbackElement) {
-                feedbackElement = document.createElement('div');
-                feedbackElement.className = 'invalid-feedback';
-                agreementContainer.appendChild(feedbackElement);
+                feedbackElement.textContent = errorMessage;
+                feedbackElement.style.display = 'block';
+                isValid = false;
+                
+                // Scroll to the first invalid field
+                if (checkbox === document.querySelector('.is-invalid')) {
+                    checkbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                return false;
             }
-
-            feedbackElement.textContent = 'Musisz wyrazić zgodę na przetwarzanie danych osobowych';
-            feedbackElement.style.display = 'block';
-            isValid = false;
+            return true;
         }
+        
+        // Validate electronic documents agreement
+        const agreement = document.getElementById('agreement');
+        validateCheckbox(agreement, 'Musisz wyrazić zgodę na otrzymywanie dokumentów w formie elektronicznej');
+        
+        // Validate data processing consent (required)
+        const dataProcessingConsent = document.getElementById('dataProcessingConsent');
+        validateCheckbox(dataProcessingConsent, 'Musisz wyrazić zgodę na przetwarzanie danych osobowych');
 
         return isValid;
         
