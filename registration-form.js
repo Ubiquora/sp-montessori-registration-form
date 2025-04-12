@@ -669,10 +669,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const submitBtn = document.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wysyłanie...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wysyłanie...';        // Send data to Google Sheets
+        sendFormDataWithRetry(sheetScriptURL, formData, submitBtn, originalBtnText, 0);
+    });
+    
+    /**
+     * Sends form data to Google Sheets with improved error handling and retry capability
+     * @param {string} url - The URL to send data to
+     * @param {FormData} formData - The form data to send
+     * @param {HTMLElement} submitBtn - The submit button (for UI updates)
+     * @param {string} originalBtnText - Original text of the button
+     * @param {number} retryCount - Current retry attempt count
+     */
+    function sendFormDataWithRetry(url, formData, submitBtn, originalBtnText, retryCount) {
+        const MAX_RETRIES = 2; // Maximum number of retry attempts
+        const RETRY_DELAY = 2000; // Delay between retries in ms
 
-        // Send data to Google Sheets
-        fetch(sheetScriptURL, {
+        fetch(url, {
             method: 'POST',
             cache: 'no-cache',
             headers: {
@@ -680,48 +693,139 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: new URLSearchParams(formData)
         })
-            .then(response => {
-                // Google Apps Script returns success via HTTP code, but may have application-level errors
-                // We're converting the response to text to handle both success and Google Apps Script errors
-                return response.text().then(text => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}: ${text}`);
+        .then(response => {
+            return response.text().then(text => {
+                // Process based on response status
+                if (response.ok) {
+                    if (text.includes("error") || text.includes("błąd")) {
+                        // Google Apps Script may return 200 but contain error message
+                        throw new Error(`Script error: ${text}`);
                     }
                     return text;
-                });
-            })
-            .then(data => {
-                console.log('Form data submitted successfully');
-
-                // Display confirmation message
-                showConfirmationMessage();
-
-                // Reset form after successful submission
-                registrationForm.reset();
-
-                // Reset address sections
-                resetAddressSection('sameAddress', 'registeredAddressSection', [
-                    'regStreetWithNumber', 'regPostalCode', 'regCity'
-                ]);
-
-                resetAddressSection('motherSameAddress', 'motherAddressSection', [
-                    'motherStreetWithNumber', 'motherPostalCode', 'motherCity'
-                ]);
-
-                resetAddressSection('fatherSameAddress', 'fatherAddressSection', [
-                    'fatherStreetWithNumber', 'fatherPostalCode', 'fatherCity'
-                ]);
-            })
-            .catch(error => {
-                console.error('Error submitting form:', error);
-                alert('Wystąpił błąd podczas wysyłania formularza. Spróbuj ponownie później.');
-            })
-            .finally(() => {
-                // Reset submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+                } else if (response.status === 429) {
+                    throw new Error("TOO_MANY_REQUESTS");
+                } else if (response.status >= 500) {
+                    throw new Error("SERVER_ERROR");
+                } else if (response.status === 403) {
+                    throw new Error("FORBIDDEN");
+                } else if (response.status === 401) {
+                    throw new Error("UNAUTHORIZED");
+                } else {
+                    throw new Error(`HTTP error ${response.status}: ${text}`);
+                }
             });
-    });
+        })
+        .then(data => {
+            console.log('Form data submitted successfully');
+
+            // Display confirmation message
+            showConfirmationMessage();
+
+            // Reset form after successful submission
+            registrationForm.reset();
+
+            // Reset address sections
+            resetAddressSection('sameAddress', 'registeredAddressSection', [
+                'regStreetWithNumber', 'regPostalCode', 'regCity'
+            ]);
+
+            resetAddressSection('motherSameAddress', 'motherAddressSection', [
+                'motherStreetWithNumber', 'motherPostalCode', 'motherCity'
+            ]);
+
+            resetAddressSection('fatherSameAddress', 'fatherAddressSection', [
+                'fatherStreetWithNumber', 'fatherPostalCode', 'fatherCity'
+            ]);
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            
+            // Handle specific error types
+            if (error.message === "TOO_MANY_REQUESTS" && retryCount < MAX_RETRIES) {
+                // Retry with exponential backoff for rate limiting
+                const waitTime = RETRY_DELAY * (retryCount + 1);
+                showErrorMessage("System jest obecnie przeciążony. Ponawiam próbę za kilka sekund...");
+                
+                setTimeout(() => {
+                    sendFormDataWithRetry(url, formData, submitBtn, originalBtnText, retryCount + 1);
+                }, waitTime);
+                return;
+            } else if (error.message === "SERVER_ERROR" && retryCount < MAX_RETRIES) {
+                // Retry server errors once
+                showErrorMessage("Serwer jest chwilowo niedostępny. Ponawiam próbę za kilka sekund...");
+                
+                setTimeout(() => {
+                    sendFormDataWithRetry(url, formData, submitBtn, originalBtnText, retryCount + 1);
+                }, RETRY_DELAY);
+                return;
+            }
+            
+            // Show appropriate error message based on error type
+            if (error.message === "TOO_MANY_REQUESTS") {
+                showErrorMessage("Zbyt wiele zgłoszeń w tym momencie. Proszę spróbować później.");
+            } else if (error.message === "SERVER_ERROR") {
+                showErrorMessage("Serwer jest chwilowo niedostępny. Proszę spróbować później.");
+            } else if (error.message === "FORBIDDEN") {
+                showErrorMessage("Brak dostępu do systemu rejestracji. Proszę skontaktować się z sekretariatem szkoły.");
+            } else if (error.message === "UNAUTHORIZED") {
+                showErrorMessage("Autoryzacja do systemu wygasła. Proszę odświeżyć stronę i spróbować ponownie.");
+            } else if (error.message.includes("Script error")) {
+                showErrorMessage("Wystąpił błąd podczas przetwarzania formularza. Prosimy o kontakt z sekretariatem szkoły.");
+            } else {
+                // Generic error for network issues or other problems
+                showErrorMessage("Wystąpił błąd podczas wysyłania formularza. Sprawdź połączenie z internetem i spróbuj ponownie później.");
+            }        })
+        .finally(() => {
+            // Always reset the submit button - retrying is handled in the catch block
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        });
+    }
+    
+    /**
+     * Displays an error message to the user
+     * @param {string} message - The error message to display
+     */
+    function showErrorMessage(message) {
+        if (typeof bootstrap !== 'undefined') {
+            // Remove existing error modal if present
+            const existingModal = document.getElementById('errorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Create a Bootstrap modal with the error message
+            const modalHTML = `
+                <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="errorModalLabel">Błąd</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="bi bi-exclamation-triangle-fill text-danger fs-1 me-3"></i>
+                                    <p class="mb-0">${message}</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append modal to body and show it
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+        } else {
+            // Fallback to alert if Bootstrap is not available
+            alert(message);
+        }
+    }
 
     /**
      * Format phone numbers to standardized format for Google Sheets
