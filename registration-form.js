@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
     
     const registrationForm = DOM.form;
 
+    // Configuration
+    const GOOGLE_SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZJBpP5An4M0MdDYPeGopx7dvk-5-NerMa-9-dRg1kab85Zz9gU9sUIP6Qb99pnx5N/exec";
+
     /**
      * General-purpose function to toggle section visibility based on checkbox state
      * @param {HTMLElement} checkbox - The checkbox element that controls visibility
@@ -446,6 +449,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Add listener to birthDate to re-validate PESEL if it changes
+    const birthDateField = DOM.birthDate;
+    if (birthDateField) {
+        birthDateField.addEventListener('change', function() {
+            const peselField = DOM.pesel;
+            if (peselField && peselField.value) {
+                // Trigger the input event manually to re-run validation logic
+                peselField.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
     /**
      * Reusable function to format postal code in XX-XXX format
      * @param {string} value - The input value to format
@@ -661,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // URL for Google Sheets script
-        const sheetScriptURL = "https://script.google.com/macros/s/AKfycbwZJBpP5An4M0MdDYPeGopx7dvk-5-NerMa-9-dRg1kab85Zz9gU9sUIP6Qb99pnx5N/exec";
+        const sheetScriptURL = GOOGLE_SHEET_SCRIPT_URL; // Use the constant
 
         // Show loading indicator
         const submitBtn = document.querySelector('button[type="submit"]');
