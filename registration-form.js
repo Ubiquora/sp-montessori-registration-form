@@ -216,79 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
             addressSection.classList.remove('auto-filled');
         }
     }
-
-    // Function to generate a random 11-digit PESEL number
-    function generateRandomPesel() {
-        let pesel = '';
-        for (let i = 0; i < 11; i++) {
-            pesel += Math.floor(Math.random() * 10);
-        }
-        return pesel;
-    }
-
-    // Add a function to prepopulate form fields with dummy data
-    function prepopulateFormWithDummyData() {
-        // Student data
-        DOM.firstName.value = 'Jan Maria';
-        DOM.lastName.value = 'Kowalski';
-        DOM.pesel.value = generateRandomPesel();
-        DOM.grade.value = '3';
-
-        // Set a date of birth (age-appropriate for school registration in 2025)
-        const birthDate = new Date();
-        // For 3rd grade (typically 9 years old)
-        birthDate.setFullYear(2025 - 9);
-        DOM.birthDate.value = birthDate.toISOString().split('T')[0];
-
-        DOM.birthPlace.value = 'Warszawa';
-
-        // Residence address
-        DOM.resStreetWithNumber.value = 'Marszałkowska 123/45';
-        DOM.resPostalCode.value = '00-950';
-        DOM.resCity.value = 'Warszawa';
-        DOM.resVoivodeship.value = 'Mazowieckie';
-        DOM.resCounty.value = 'Warszawa';
-        DOM.resCommune.value = 'Warszawa';
-
-        // Registered address
-        DOM.regStreetWithNumber.value = 'Marszałkowska 123/45';
-        DOM.regPostalCode.value = '00-950';
-        DOM.regCity.value = 'Warszawa';
-
-        // Schools
-        DOM.currentSchoolName.value = 'Szkoła Podstawowa nr 123 im. Jana Kowalskiego';
-        DOM.currentSchoolAddress.value = 'ul. Szkolna 10, 00-950 Warszawa';
-        DOM.districtSchoolName.value = 'Szkoła Podstawowa nr 456 im. Marii Nowak';
-        DOM.districtSchoolAddress.value = 'ul. Rejonowa 20, 00-950 Warszawa';
-        DOM.districtSchoolEmail.value = 'sekretariat@sp456.edu.pl';
-
-        // Mother data
-        DOM.motherFirstName.value = 'Anna';
-        DOM.motherLastName.value = 'Kowalska';
-        DOM.motherPhone.value = '500100200';
-        DOM.motherEmail.value = 'anna.kowalska@example.com';
-        DOM.motherId.value = 'ABC123456';
-        DOM.motherStreetWithNumber.value = 'Marszałkowska 1';
-        DOM.motherPostalCode.value = '00-950';
-        DOM.motherCity.value = 'Warszawa';
-
-        // Father data
-        DOM.fatherFirstName.value = 'Tomasz';
-        DOM.fatherLastName.value = 'Kowalski';
-        DOM.fatherPhone.value = '600200300';
-        DOM.fatherEmail.value = 'tomasz.kowalski@example.com';
-        DOM.fatherId.value = 'DEF654321';
-        DOM.fatherStreetWithNumber.value = 'Marszałkowska 12';
-        DOM.fatherPostalCode.value = '00-950';
-        DOM.fatherCity.value = 'Warszawa';
-
-        // Check the agreement checkbox
-        DOM.agreement.checked = true;
-    }
-
-    // Call the function to prepopulate form with dummy data
-    prepopulateFormWithDummyData();
-
+    
     /**
      * Generic function to setup input validation and formatting
      * @param {string} fieldId - ID of the field to set up
@@ -676,13 +604,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // URL for Google Sheets script
-        const sheetScriptURL = GOOGLE_SHEET_SCRIPT_URL; // Use the constant
-
-        // Show loading indicator
+        const sheetScriptURL = GOOGLE_SHEET_SCRIPT_URL; // Use the constant        // Show loading indicator and prevent multiple submissions
         const submitBtn = document.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
+        
+        // Disable submit button
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wysyłanie...';        // Send data to Google Sheets
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wysyłanie...';
+        
+        // Add a timer to re-enable the button after 30 seconds in case of network timeout
+        const buttonTimeout = setTimeout(() => {
+            if (submitBtn.disabled) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                showErrorMessage("Wystąpił problem z połączeniem. Spróbuj ponownie.");
+            }
+        }, 30000); // 30 seconds timeout
+        
+        // Store the timeout ID so it can be cleared on successful submission
+        submitBtn.dataset.timeoutId = buttonTimeout;
+        
+        // Send data to Google Sheets
         sendFormDataWithRetry(sheetScriptURL, formData, submitBtn, originalBtnText, 0);
     });
     
@@ -1125,10 +1067,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-    
-    // Call setup for input formatters
+      // Call setup for input formatters
     setupInputFormatters();
-
+    
     // Display confirmation message after form submission
     function showConfirmationMessage() {
         // Create a modal with bootstrap if available
